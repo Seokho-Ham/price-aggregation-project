@@ -17,17 +17,19 @@ public class BrandController {
 
     @PostMapping
     public ApplicationResponse<Void> createBrand(@RequestBody @Valid BrandCreateRequest request) {
-
         brandService.create(request.toDto());
-
         return ApplicationResponse.success();
     }
 
     @PatchMapping("/{brandId}")
-    public ApplicationResponse<Void> createBrand(@PathVariable("brandId") Long brandId, @RequestBody @Valid BrandUpdateRequest request) {
-
+    public ApplicationResponse<Void> updateBrand(@PathVariable("brandId") Long brandId, @RequestBody @Valid BrandUpdateRequest request) {
         brandService.update(request.toDto(brandId));
+        return ApplicationResponse.success();
+    }
 
+    @DeleteMapping("/{brandId}")
+    public ApplicationResponse<Void> deleteBrand(@PathVariable("brandId") Long brandId) {
+        brandService.delete(brandId);
         return ApplicationResponse.success();
     }
 

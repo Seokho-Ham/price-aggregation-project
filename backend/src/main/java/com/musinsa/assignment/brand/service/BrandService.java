@@ -27,14 +27,21 @@ public class BrandService {
     @Transactional
     public void update(BrandUpdateDto requestDto) {
         validateBrandNameDuplicate(requestDto.getBrandName());
-        Brand brand = brandRepository.findById(requestDto.getBrandId())
+        Brand brand = brandRepository.findByIdAndDeletedIsFalse(requestDto.getBrandId())
             .orElseThrow(BrandNotFoundException::new);
         brand.updateName(requestDto.getBrandName());
     }
 
+    @Transactional
+    public void delete(Long brandId) {
+        Brand brand = brandRepository.findByIdAndDeletedIsFalse(brandId)
+            .orElseThrow(BrandNotFoundException::new);
+        brand.delete();
+    }
+
+    //생성시에는 모든 데이터 기반으로 브랜드명 조회
     private void validateBrandNameDuplicate(String brandName) {
         Optional<Brand> existingBrand = brandRepository.findByName(brandName);
-
         if (existingBrand.isPresent()) {
             throw new BrandDuplicationException();
         }
