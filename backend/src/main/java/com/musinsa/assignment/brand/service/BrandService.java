@@ -1,9 +1,11 @@
 package com.musinsa.assignment.brand.service;
 
-import com.musinsa.assignment.brand.controller.dto.BrandCreateRequest;
 import com.musinsa.assignment.brand.domain.Brand;
 import com.musinsa.assignment.brand.domain.BrandRepository;
 import com.musinsa.assignment.brand.exception.BrandDuplicationException;
+import com.musinsa.assignment.brand.exception.BrandNotFoundException;
+import com.musinsa.assignment.brand.service.dto.BrandCreateDto;
+import com.musinsa.assignment.brand.service.dto.BrandUpdateDto;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -17,15 +19,24 @@ public class BrandService {
     private final BrandRepository brandRepository;
 
     @Transactional
-    public void create(BrandCreateRequest request) {
+    public void create(BrandCreateDto requestDto) {
+        validateBrandNameDuplicate(requestDto.getBrandName());
+        brandRepository.save(new Brand(requestDto.getBrandName()));
+    }
 
-        Optional<Brand> existingBrand = brandRepository.findByName(request.getBrandName());
+    @Transactional
+    public void update(BrandUpdateDto requestDto) {
+        validateBrandNameDuplicate(requestDto.getBrandName());
+        Brand brand = brandRepository.findById(requestDto.getBrandId())
+            .orElseThrow(BrandNotFoundException::new);
+        brand.updateName(requestDto.getBrandName());
+    }
+
+    private void validateBrandNameDuplicate(String brandName) {
+        Optional<Brand> existingBrand = brandRepository.findByName(brandName);
 
         if (existingBrand.isPresent()) {
             throw new BrandDuplicationException();
         }
-
-        Brand newBrand = new Brand(request.getBrandName());
-        brandRepository.save(newBrand);
     }
 }

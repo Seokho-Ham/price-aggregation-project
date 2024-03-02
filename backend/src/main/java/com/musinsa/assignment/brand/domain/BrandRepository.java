@@ -11,6 +11,7 @@ public interface BrandRepository {
 
     Optional<Brand> findByName(String name);
 
-    void deleteAll();
+    Optional<Brand> findById(Long brandId);
 
+    void deleteAll();
 }

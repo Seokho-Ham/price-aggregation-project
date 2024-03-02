@@ -24,4 +24,7 @@ public class Brand {
         this.name = name;
     }
 
+    public void updateName(String brandName) {
+        this.name = brandName;
+    }
 }
