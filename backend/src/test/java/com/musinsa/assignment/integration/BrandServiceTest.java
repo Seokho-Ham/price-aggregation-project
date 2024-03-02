@@ -18,7 +18,7 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.junit.jupiter.api.Assertions.assertAll;
 
 @DisplayName("[통합테스트] 브랜드 생성, 수정 삭제 테스트")
-public class BrandServiceTest extends IntegrationTest {
+class BrandServiceTest extends IntegrationTest {
 
     @Autowired
     private BrandService brandService;
