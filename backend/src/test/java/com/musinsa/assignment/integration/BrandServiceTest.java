@@ -2,7 +2,7 @@ package com.musinsa.assignment.integration;
 
 import com.musinsa.assignment.brand.domain.Brand;
 import com.musinsa.assignment.brand.domain.BrandRepository;
-import com.musinsa.assignment.brand.exception.BrandDuplicationException;
+import com.musinsa.assignment.brand.exception.BrandDuplicateException;
 import com.musinsa.assignment.brand.exception.BrandNotFoundException;
 import com.musinsa.assignment.brand.service.BrandService;
 import com.musinsa.assignment.brand.service.dto.BrandCreateDto;
@@ -50,8 +50,8 @@ class BrandServiceTest extends IntegrationTest {
         brandRepository.save(new Brand(brandName));
 
         assertThatThrownBy(() -> brandService.create(new BrandCreateDto(brandName)))
-            .isInstanceOf(BrandDuplicationException.class)
-            .hasMessage(ApplicationErrorCode.BRAND_DUPLICATION.getMessage());
+            .isInstanceOf(BrandDuplicateException.class)
+            .hasMessage(ApplicationErrorCode.BRAND_DUPLICATE.getMessage());
     }
 
     @DisplayName("[update] 전달된 브랜드명과 중복되는 브랜드가 존재하지 않을 경우 해당 브랜드명으로 업데이트한다.")
@@ -81,8 +81,8 @@ class BrandServiceTest extends IntegrationTest {
         brandRepository.save(new Brand(brandName2));
 
         assertThatThrownBy(() -> brandService.update(new BrandUpdateDto(brand1.getId(), brandName2)))
-            .isInstanceOf(BrandDuplicationException.class)
-            .hasMessage(ApplicationErrorCode.BRAND_DUPLICATION.getMessage());
+            .isInstanceOf(BrandDuplicateException.class)
+            .hasMessage(ApplicationErrorCode.BRAND_DUPLICATE.getMessage());
     }
 
     @DisplayName("[delete] 전달된 브랜드 Id에 해당하는 데이터를 논리적으로 삭제처리한다.")

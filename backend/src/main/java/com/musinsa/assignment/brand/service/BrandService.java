@@ -2,7 +2,7 @@ package com.musinsa.assignment.brand.service;
 
 import com.musinsa.assignment.brand.domain.Brand;
 import com.musinsa.assignment.brand.domain.BrandRepository;
-import com.musinsa.assignment.brand.exception.BrandDuplicationException;
+import com.musinsa.assignment.brand.exception.BrandDuplicateException;
 import com.musinsa.assignment.brand.exception.BrandNotFoundException;
 import com.musinsa.assignment.brand.service.dto.BrandCreateDto;
 import com.musinsa.assignment.brand.service.dto.BrandUpdateDto;
@@ -43,7 +43,7 @@ public class BrandService {
     private void validateBrandNameDuplicate(String brandName) {
         Optional<Brand> existingBrand = brandRepository.findByName(brandName);
         if (existingBrand.isPresent()) {
-            throw new BrandDuplicationException();
+            throw new BrandDuplicateException();
         }
     }
 }
