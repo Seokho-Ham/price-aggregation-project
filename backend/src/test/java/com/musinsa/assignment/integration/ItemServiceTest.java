@@ -44,7 +44,6 @@ class ItemServiceTest extends IntegrationTest{
     @DisplayName("동일한 브랜드에 중복되는 상품이 없다면 상품을 생성한다.")
     @Test
     void create_item_success() {
-
         String itemName = "상품1";
         double price = 10000;
         Brand brand = brandRepository.save(new Brand("브랜드1"));
@@ -107,4 +106,22 @@ class ItemServiceTest extends IntegrationTest{
         assertThatThrownBy(() -> itemService.update(new ItemUpdateDto(itemId, itemName, price)));
     }
 
+    @DisplayName("올바른 상품의 Id를 전달할 경우 상품 정보를 삭제한다.")
+    @Test
+    void delete_item_success() {
+        String itemName = "상품1";
+        double price = 10000;
+        Brand brand = brandRepository.save(new Brand("브랜드1"));
+        Category category = categoryRepository.save(new Category("카테고리1"));
+        Item item = itemRepository.save(new Item(itemName, price, brand.getId(), category.getId()));
+
+        itemService.delete(item.getId());
+
+        Item deletedItem = itemRepository.findById(item.getId()).get();
+
+        assertAll(() -> {
+            assertThat(deletedItem.getDeleted()).isTrue();
+            assertThat(deletedItem.getDeletedAt()).isNotNull();
+        });
+    }
 }
