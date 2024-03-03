@@ -2,13 +2,11 @@ package com.musinsa.assignment.item.controller;
 
 import com.musinsa.assignment.common.dto.ApplicationResponse;
 import com.musinsa.assignment.item.controller.dto.ItemCreateRequest;
+import com.musinsa.assignment.item.controller.dto.ItemUpdateRequest;
 import com.musinsa.assignment.item.service.ItemService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 
 @RequiredArgsConstructor
 @RequestMapping("/items")
@@ -20,6 +18,12 @@ public class ItemController {
     @PostMapping
     public ApplicationResponse<Void> createItem(@RequestBody @Valid ItemCreateRequest request) {
         itemService.create(request.toDto());
+        return ApplicationResponse.success();
+    }
+
+    @PatchMapping("/{itemId}")
+    public ApplicationResponse<Void> updateItem(@PathVariable("itemId") Long itemId, @RequestBody ItemUpdateRequest request) {
+        itemService.update(request.toDto(itemId));
         return ApplicationResponse.success();
     }
 

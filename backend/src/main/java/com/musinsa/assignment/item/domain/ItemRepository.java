@@ -9,4 +9,6 @@ public interface ItemRepository extends JpaRepository<Item, Long> {
     Optional<Item> findByBrandIdAndNameAndDeletedIsFalse(Long brandId, String itemName);
 
     Optional<Item> findByBrandIdAndName(Long brandId, String itemName);
+
+    Optional<Item> findByIdAndDeletedIsFalse(Long itemId);
 }

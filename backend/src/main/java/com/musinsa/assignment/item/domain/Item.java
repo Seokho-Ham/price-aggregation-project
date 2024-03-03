@@ -1,11 +1,13 @@
 package com.musinsa.assignment.item.domain;
 
 import com.musinsa.assignment.common.domain.BaseTimeEntity;
+import com.musinsa.assignment.common.exception.InvalidParamException;
 import com.musinsa.assignment.item.exception.InvalidPriceException;
 import jakarta.persistence.*;
 import lombok.AccessLevel;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
+import org.apache.commons.lang3.ObjectUtils;
 
 import java.time.LocalDateTime;
 
@@ -29,6 +31,7 @@ public class Item extends BaseTimeEntity {
     private LocalDateTime deletedAt;
 
     public Item(String name, Double price, Long brandId, Long categoryId) {
+        validateName(name);
         validatePrice(price);
         this.name = name;
         this.price = price;
@@ -37,7 +40,23 @@ public class Item extends BaseTimeEntity {
         this.deleted = false;
     }
 
-    private void validatePrice(double price) {
+    public void update(String itemName, Double price) {
+        validateName(itemName);
+        validatePrice(price);
+        this.price = price;
+    }
+
+    private void validateName(String itemName) {
+        if (ObjectUtils.isEmpty(itemName)) {
+            throw new InvalidParamException();
+        }
+    }
+
+    private void validatePrice(Double price) {
+        if (ObjectUtils.isEmpty(price)) {
+            throw new InvalidParamException();
+        }
+
         if (price < 0) {
             throw new InvalidPriceException();
         }

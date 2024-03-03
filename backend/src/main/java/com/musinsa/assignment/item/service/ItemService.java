@@ -7,7 +7,9 @@ import com.musinsa.assignment.category.exception.CategoryNotFoundException;
 import com.musinsa.assignment.item.domain.Item;
 import com.musinsa.assignment.item.domain.ItemRepository;
 import com.musinsa.assignment.item.exception.ItemDuplicateException;
+import com.musinsa.assignment.item.exception.ItemNotFoundException;
 import com.musinsa.assignment.item.service.dto.ItemCreateDto;
+import com.musinsa.assignment.item.service.dto.ItemUpdateDto;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -28,6 +30,13 @@ public class ItemService {
         validateCategoryExists(requestDto.getCategoryId());
         validateItemDuplicate(requestDto.getBrandId(), requestDto.getItemName());
         itemRepository.save(new Item(requestDto.getItemName(), requestDto.getPrice(), requestDto.getBrandId(), requestDto.getCategoryId()));
+    }
+
+    @Transactional
+    public void update(ItemUpdateDto itemUpdateDto) {
+        Item item = itemRepository.findByIdAndDeletedIsFalse(itemUpdateDto.getItemId())
+            .orElseThrow(ItemNotFoundException::new);
+        item.update(itemUpdateDto.getItemName(), itemUpdateDto.getPrice());
     }
 
     private void validateBrandExists(Long brandId) {
