@@ -39,6 +39,13 @@ public class ItemService {
         item.update(itemUpdateDto.getItemName(), itemUpdateDto.getPrice());
     }
 
+    @Transactional
+    public void delete(Long itemId) {
+        Item item = itemRepository.findByIdAndDeletedIsFalse(itemId)
+            .orElseThrow(ItemNotFoundException::new);
+        item.delete();
+    }
+
     private void validateBrandExists(Long brandId) {
         if (!brandRepository.existsById(brandId)) {
             throw new BrandNotFoundException();

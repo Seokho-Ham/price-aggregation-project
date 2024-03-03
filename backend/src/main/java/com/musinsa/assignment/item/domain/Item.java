@@ -43,7 +43,13 @@ public class Item extends BaseTimeEntity {
     public void update(String itemName, Double price) {
         validateName(itemName);
         validatePrice(price);
+        this.name = itemName;
         this.price = price;
+    }
+
+    public void delete() {
+        this.deleted = true;
+        this.deletedAt = LocalDateTime.now();
     }
 
     private void validateName(String itemName) {

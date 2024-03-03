@@ -27,4 +27,10 @@ public class ItemController {
         return ApplicationResponse.success();
     }
 
+    @DeleteMapping("/{itemId}")
+    public ApplicationResponse<Void> deleteItem(@PathVariable("itemId") Long itemId) {
+        itemService.delete(itemId);
+        return ApplicationResponse.success();
+    }
+
 }
