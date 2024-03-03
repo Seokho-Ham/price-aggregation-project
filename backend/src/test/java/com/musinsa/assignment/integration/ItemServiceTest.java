@@ -9,6 +9,7 @@ import com.musinsa.assignment.item.domain.ItemRepository;
 import com.musinsa.assignment.item.exception.ItemDuplicateException;
 import com.musinsa.assignment.item.service.ItemService;
 import com.musinsa.assignment.item.service.dto.ItemCreateDto;
+import com.musinsa.assignment.item.service.dto.ItemUpdateDto;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -73,6 +74,37 @@ class ItemServiceTest extends IntegrationTest{
 
         assertThatThrownBy(() -> itemService.create(new ItemCreateDto(itemName, price, brand.getId(), category.getId())))
             .isInstanceOf(ItemDuplicateException.class);
+    }
+
+    @DisplayName("존재하는 상품에 대한 정상적인 업데이트 요청이라면 해당 상품의 정보를 업데이트 한다.")
+    @Test
+    void update_item_success() {
+        String originalName = "상품1";
+        double originalPrice = 10000;
+        Brand brand = brandRepository.save(new Brand("브랜드1"));
+        Category category = categoryRepository.save(new Category("카테고리1"));
+        Item item = itemRepository.save(new Item(originalName, originalPrice, brand.getId(), category.getId()));
+
+        String newName = "상품2";
+        double newPrice = 20000;
+        itemService.update(new ItemUpdateDto(item.getId(), newName, newPrice));
+
+        Item updatedItem = itemRepository.findById(item.getId()).get();
+
+        assertAll(() -> {
+            assertThat(updatedItem.getName()).isEqualTo(newName);
+            assertThat(updatedItem.getPrice()).isEqualTo(newPrice);
+        });
+    }
+
+    @DisplayName("존재하지 않는 상품에 대한 업데이트 요청일 경우 예외를 반환한다.")
+    @Test
+    void update_item_fail_by_item_not_found() {
+        Long itemId = Long.MAX_VALUE;
+        String itemName = "상품1";
+        double price = 10000;
+
+        assertThatThrownBy(() -> itemService.update(new ItemUpdateDto(itemId, itemName, price)));
     }
 
 }
