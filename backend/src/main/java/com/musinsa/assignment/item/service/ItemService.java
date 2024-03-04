@@ -25,25 +25,28 @@ public class ItemService {
     private final CategoryRepository categoryRepository;
 
     @Transactional
-    public void create(ItemCreateDto requestDto) {
+    public Long create(ItemCreateDto requestDto) {
         validateBrandExists(requestDto.getBrandId());
         validateCategoryExists(requestDto.getCategoryId());
         validateItemDuplicate(requestDto.getBrandId(), requestDto.getItemName());
-        itemRepository.save(new Item(requestDto.getItemName(), requestDto.getPrice(), requestDto.getBrandId(), requestDto.getCategoryId()));
+        Item item = itemRepository.save(new Item(requestDto.getItemName(), requestDto.getPrice(), requestDto.getBrandId(), requestDto.getCategoryId()));
+        return item.getId();
     }
 
     @Transactional
-    public void update(ItemUpdateDto itemUpdateDto) {
+    public Long update(ItemUpdateDto itemUpdateDto) {
         Item item = itemRepository.findByIdAndDeletedIsFalse(itemUpdateDto.getItemId())
             .orElseThrow(ItemNotFoundException::new);
         item.update(itemUpdateDto.getItemName(), itemUpdateDto.getPrice());
+        return item.getId();
     }
 
     @Transactional
-    public void delete(Long itemId) {
+    public Long delete(Long itemId) {
         Item item = itemRepository.findByIdAndDeletedIsFalse(itemId)
             .orElseThrow(ItemNotFoundException::new);
         item.delete();
+        return item.getId();
     }
 
     private void validateBrandExists(Long brandId) {

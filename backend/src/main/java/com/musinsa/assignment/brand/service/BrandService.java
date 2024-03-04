@@ -19,24 +19,27 @@ public class BrandService {
     private final BrandRepository brandRepository;
 
     @Transactional
-    public void create(BrandCreateDto requestDto) {
+    public Long create(BrandCreateDto requestDto) {
         validateBrandNameDuplicate(requestDto.getBrandName());
-        brandRepository.save(new Brand(requestDto.getBrandName()));
+        Brand brand = brandRepository.save(new Brand(requestDto.getBrandName()));
+        return brand.getId();
     }
 
     @Transactional
-    public void update(BrandUpdateDto requestDto) {
+    public Long update(BrandUpdateDto requestDto) {
         validateBrandNameDuplicate(requestDto.getBrandName());
         Brand brand = brandRepository.findByIdAndDeletedIsFalse(requestDto.getBrandId())
             .orElseThrow(BrandNotFoundException::new);
         brand.updateName(requestDto.getBrandName());
+        return brand.getId();
     }
 
     @Transactional
-    public void delete(Long brandId) {
+    public Long delete(Long brandId) {
         Brand brand = brandRepository.findByIdAndDeletedIsFalse(brandId)
             .orElseThrow(BrandNotFoundException::new);
         brand.delete();
+        return brand.getId();
     }
 
     //생성시에는 모든 데이터 기반으로 브랜드명 조회
