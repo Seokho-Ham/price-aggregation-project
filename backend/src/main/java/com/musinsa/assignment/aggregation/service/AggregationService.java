@@ -1,8 +1,8 @@
 package com.musinsa.assignment.aggregation.service;
 
-import com.musinsa.assignment.aggregation.domain.BrandPriceInfo;
-import com.musinsa.assignment.aggregation.domain.CategoryLowestHighestPriceBrand;
-import com.musinsa.assignment.aggregation.domain.CategoryLowestHighestPriceBrandRedisRepository;
+import com.musinsa.assignment.aggregation.controller.dto.BrandPriceInfoResponse;
+import com.musinsa.assignment.aggregation.controller.dto.CategoryLowestAndHighestBrandResponse;
+import com.musinsa.assignment.aggregation.domain.*;
 import com.musinsa.assignment.aggregation.exception.CacheNotFoundException;
 import com.musinsa.assignment.brand.domain.Brand;
 import com.musinsa.assignment.brand.domain.BrandRepository;
@@ -25,36 +25,56 @@ public class AggregationService {
     private final CategoryRepository categoryRepository;
     private final BrandRepository brandRepository;
     private final ItemRepository itemRepository;
-    private final CategoryLowestHighestPriceBrandRedisRepository categoryLowestHighestPriceBrandRedisRepository;
+    private final CategoryLowestPriceBrandRedisRepository categoryLowestPriceBrandRedisRepository;
+    private final CategoryHighestPriceBrandRedisRepository categoryHighestPriceBrandRedisRepository;
+
+    public CategoryLowestAndHighestBrandResponse getCategoryLowestHighestPriceBrand(String categoryName) {
+        Category category = categoryRepository.findByName(categoryName)
+            .orElseThrow(CategoryNotFoundException::new);
+        CategoryHighestPriceBrand highestPriceBrand = categoryHighestPriceBrandRedisRepository.findById(category.getId())
+            .orElseThrow(CacheNotFoundException::new);
+        CategoryLowestPriceBrand lowestPriceBrand = categoryLowestPriceBrandRedisRepository.findById(category.getId())
+            .orElseThrow(CacheNotFoundException::new);
+
+        return new CategoryLowestAndHighestBrandResponse(
+            category.getName(),
+            BrandPriceInfoResponse.from(lowestPriceBrand.getLowestPriceBrand()),
+            BrandPriceInfoResponse.from(highestPriceBrand.getHighestPriceBrand())
+        );
+    }
 
     public void aggregate(Long itemId) {
         itemRepository.findByIdAndDeletedIsFalse(itemId)
             .ifPresentOrElse(
-                item -> aggregateCategoryLowestHighestPriceBrand(item.getCategoryId()),
+                item -> {
+                    Category category = categoryRepository.findById(item.getCategoryId())
+                        .orElseThrow(CategoryNotFoundException::new);
+                    aggregateCategoryLowestPriceBrand(category);
+                    aggregateCategoryHighestPriceBrand(category);
+                },
                 () -> log.error("[aggregate-item] 데이터 집계에 실패(상품 존재하지 않음) - itemId: {}", itemId));
     }
 
-    public CategoryLowestHighestPriceBrand getCategoryLowestHighestPriceBrand(String categoryName) {
-        Category category = categoryRepository.findByName(categoryName)
-            .orElseThrow(CategoryNotFoundException::new);
-        return categoryLowestHighestPriceBrandRedisRepository.findById(category.getId())
-            .orElseThrow(CacheNotFoundException::new);
-    }
-
-    private void aggregateCategoryLowestHighestPriceBrand(Long categoryId) {
-        Category category = categoryRepository.findById(categoryId)
-            .orElseThrow(CategoryNotFoundException::new);
-        BrandPriceInfo lowestPriceBrandInfo = getLowestPriceBrandInfo(categoryId);
-        BrandPriceInfo highestPriceBrandInfo = getHighestPriceBrandInfo(categoryId);
-
-        CategoryLowestHighestPriceBrand categoryLowestHighestPriceBrand = new CategoryLowestHighestPriceBrand(
+    private void aggregateCategoryLowestPriceBrand(Category category) {
+        BrandPriceInfo lowestPriceBrandInfo = getLowestPriceBrandInfo(category.getId());
+        CategoryLowestPriceBrand categoryLowestPriceBrand = new CategoryLowestPriceBrand(
             category.getId(),
             category.getName(),
-            lowestPriceBrandInfo,
+            lowestPriceBrandInfo
+        );
+
+        categoryLowestPriceBrandRedisRepository.save(categoryLowestPriceBrand);
+    }
+
+    private void aggregateCategoryHighestPriceBrand(Category category) {
+        BrandPriceInfo highestPriceBrandInfo = getHighestPriceBrandInfo(category.getId());
+        CategoryHighestPriceBrand categoryLowestPriceBrand = new CategoryHighestPriceBrand(
+            category.getId(),
+            category.getName(),
             highestPriceBrandInfo
         );
 
-        categoryLowestHighestPriceBrandRedisRepository.save(categoryLowestHighestPriceBrand);
+        categoryHighestPriceBrandRedisRepository.save(categoryLowestPriceBrand);
     }
 
     private BrandPriceInfo getLowestPriceBrandInfo(Long categoryId) {
