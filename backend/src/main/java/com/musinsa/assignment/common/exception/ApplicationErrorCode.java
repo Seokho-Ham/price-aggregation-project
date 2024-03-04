@@ -20,7 +20,11 @@ public enum ApplicationErrorCode {
     ITEM_NOT_FOUND("ITEM-003", "조건에 맞는 상품 정보를 찾지 못했습니다."),
 
     //Category
-    CATEGORY_NOT_FOUND("CATEGORY-001", "조건에 맞는 카테고리 정보를 찾지 못했습니다.");
+    CATEGORY_NOT_FOUND("CATEGORY-001", "조건에 맞는 카테고리 정보를 찾지 못했습니다."),
+
+    //Redis
+    CACHE_NOT_FOUND("REDIS-001", "등록된 캐시를 찾지 못했습니다."),
+    REDIS_SERVER_EXCEPTION("REDIS-010","레디스 서버 실행에 실패하였습니다." );
 
     private final String code;
     private final String message;
