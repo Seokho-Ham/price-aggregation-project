@@ -3,6 +3,7 @@ package com.musinsa.assignment.aggregation.service;
 import com.musinsa.assignment.aggregation.domain.BrandPriceInfo;
 import com.musinsa.assignment.aggregation.domain.CategoryLowestHighestPriceBrand;
 import com.musinsa.assignment.aggregation.domain.CategoryLowestHighestPriceBrandRedisRepository;
+import com.musinsa.assignment.aggregation.exception.CacheNotFoundException;
 import com.musinsa.assignment.brand.domain.Brand;
 import com.musinsa.assignment.brand.domain.BrandRepository;
 import com.musinsa.assignment.brand.exception.BrandNotFoundException;
@@ -31,6 +32,13 @@ public class AggregationService {
             .ifPresentOrElse(
                 item -> aggregateCategoryLowestHighestPriceBrand(item.getCategoryId()),
                 () -> log.error("[aggregate-item] 데이터 집계에 실패(상품 존재하지 않음) - itemId: {}", itemId));
+    }
+
+    public CategoryLowestHighestPriceBrand getCategoryLowestHighestPriceBrand(String categoryName) {
+        Category category = categoryRepository.findByName(categoryName)
+            .orElseThrow(CategoryNotFoundException::new);
+        return categoryLowestHighestPriceBrandRedisRepository.findById(category.getId())
+            .orElseThrow(CacheNotFoundException::new);
     }
 
     private void aggregateCategoryLowestHighestPriceBrand(Long categoryId) {
