@@ -20,6 +20,11 @@ spring:
     init:
       encoding: utf-8
 
+  data:
+    redis:
+      host: localhost
+      port: 6370
+
 springdoc:
   swagger-ui:
     path: /swagger-ui.html
@@ -27,3 +32,4 @@ springdoc:
 logging:
   level:
     com.musinsa.assignment: debug
+
