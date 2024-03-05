@@ -13,7 +13,7 @@ public class BrandChangeEventListener {
 
     @EventListener
     public void handleBrandChange(BrandChangeEvent event) {
-        aggregationService.aggregate(event.getBrandId());
+        aggregationService.aggregateLowestHighestPriceBrandByItemId(event.getBrandId());
     }
 
 }
