@@ -1,9 +1,3 @@
-# 무신사 백엔드 직무 사전과제
-
-- 지원자명: 함석호
-- 기간: 24.02.29 ~ 24.03.07
-- 기술스택: `Java17`, `SpringBoot 3.2.3`, `JPA`, `H2`, `Swagger`, `EmbeddedRedis`, `QueryDSL`
-
 ## API 문서
 
 - 로컬에서 애플리케이션을 실행 후 http://localhost:8080/swagger-ui/index.html 로 접속하시면 API 문서를 확인하실 수 있습니다.
