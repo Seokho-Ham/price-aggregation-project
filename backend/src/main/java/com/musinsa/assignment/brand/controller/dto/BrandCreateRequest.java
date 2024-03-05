@@ -3,14 +3,18 @@ package com.musinsa.assignment.brand.controller.dto;
 import com.musinsa.assignment.brand.service.dto.BrandCreateDto;
 import jakarta.validation.constraints.NotEmpty;
 import lombok.Getter;
-import lombok.RequiredArgsConstructor;
+import lombok.NoArgsConstructor;
 
 @Getter
-@RequiredArgsConstructor
+@NoArgsConstructor
 public class BrandCreateRequest {
 
     @NotEmpty
-    private final String brandName;
+    private String brandName;
+
+    public BrandCreateRequest(String brandName) {
+        this.brandName = brandName;
+    }
 
     public BrandCreateDto toDto() {
         return new BrandCreateDto(this.brandName);

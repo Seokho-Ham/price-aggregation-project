@@ -15,8 +15,8 @@ public class ItemChangeEventListener {
 
     @EventListener
     public void handleItemChange(ItemChangeEvent event) {
-        aggregationService.aggregateLowestHighestPriceBrandByItemId(event.getItemId());
-        log.info("[aggregation-item] 아이템 데이터 변경에 따른 데이터 집계 성공");
+        aggregationService.reaggreateByItemId(event.getItemId());
+        log.info("[aggregation-item] 상품 데이터 변경에 따른 데이터 집계 성공");
     }
 
 }

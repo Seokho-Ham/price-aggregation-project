@@ -2,9 +2,11 @@ package com.musinsa.assignment.aggregation.service;
 
 import com.musinsa.assignment.brand.service.dto.BrandChangeEvent;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.context.event.EventListener;
 import org.springframework.stereotype.Component;
 
+@Slf4j
 @RequiredArgsConstructor
 @Component
 public class BrandChangeEventListener {
@@ -13,7 +15,8 @@ public class BrandChangeEventListener {
 
     @EventListener
     public void handleBrandChange(BrandChangeEvent event) {
-        aggregationService.aggregateLowestHighestPriceBrandByItemId(event.getBrandId());
+        aggregationService.reaggreateByBrandId(event.getBrandId());
+        log.info("[aggregation-brand] 브랜드 데이터 변경에 따른 데이터 집계 성공");
     }
 
 }

@@ -13,8 +13,7 @@ public class BrandServiceFacade {
     private final BrandEventProducer eventProducer;
 
     public void create(BrandCreateDto requestDto) {
-        Long brandId = brandService.create(requestDto);
-        eventProducer.produceBrandChangeEvent(brandId);
+        brandService.create(requestDto);
     }
 
     public void update(BrandUpdateDto requestDto) {
