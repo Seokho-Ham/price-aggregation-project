@@ -13,7 +13,7 @@ import org.springframework.transaction.event.TransactionalEventListener;
 @Component
 public class ItemChangeEventListener {
 
-    private final AggregationService aggregationService;
+    private final AggregationWriter aggregationWriter;
 
     @TransactionalEventListener
     public void handleItemCreate(ItemCreateEvent event) {

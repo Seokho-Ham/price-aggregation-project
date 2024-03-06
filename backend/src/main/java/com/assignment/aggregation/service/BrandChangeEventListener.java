@@ -13,7 +13,7 @@ import org.springframework.transaction.event.TransactionalEventListener;
 @Component
 public class BrandChangeEventListener {
 
-    private final AggregationService aggregationService;
+    private final AggregationWriter aggregationWriter;
 
     @TransactionalEventListener
     public void handleBrandCreate(BrandCreateEvent event) {

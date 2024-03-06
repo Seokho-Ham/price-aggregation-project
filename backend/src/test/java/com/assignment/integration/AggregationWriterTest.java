@@ -1,7 +1,7 @@
 package com.assignment.integration;
 
 import com.assignment.aggregation.domain.*;
-import com.assignment.aggregation.service.AggregationService;
+import com.assignment.aggregation.service.AggregationWriter;
 import com.assignment.brand.domain.Brand;
 import com.assignment.brand.domain.BrandRepository;
 import com.assignment.category.domain.Category;
@@ -17,10 +17,10 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertAll;
 
 @DisplayName("[통합테스트] 데이터 집계 테스트")
-class AggregationServiceTest extends IntegrationTest{
+class AggregationWriterTest extends IntegrationTest{
 
     @Autowired
-    AggregationService aggregationService;
+    AggregationWriter aggregationWriter;
 
     @Autowired
     CategoryRepository categoryRepository;
@@ -58,7 +58,7 @@ class AggregationServiceTest extends IntegrationTest{
         Item lowerPriceItem = itemRepository.save(new Item("아이템1", 10000D, brand.getId(), category.getId()));
         Item higherPriceItem = itemRepository.save(new Item("아이템2", 20000D, brand.getId(), category.getId()));
 
-        aggregationService.aggregateBrandLowestPriceInfoByBrandId(brand.getId());
+        aggregationWriter.aggregateBrandLowestPriceInfoByBrandId(brand.getId());
 
         BrandLowestPriceInfo result = brandLowestPriceInfoRepository.findById(new BrandLowestPriceInfoPk(brand.getId(), category.getId())).get();
 
@@ -76,10 +76,10 @@ class AggregationServiceTest extends IntegrationTest{
         Brand brand = brandRepository.save(new Brand("브랜드1"));
         Item item1 = itemRepository.save(new Item("아이템1", 10000D, brand.getId(), category.getId()));
         Item item2 = itemRepository.save(new Item("아이템2", 20000D, brand.getId(), category.getId()));
-        aggregationService.aggregateBrandLowestPriceInfoByBrandId(brand.getId());
+        aggregationWriter.aggregateBrandLowestPriceInfoByBrandId(brand.getId());
 
         Item lowestPriceItem = itemRepository.save(new Item("아이템3", 7000D, brand.getId(), category.getId()));
-        aggregationService.aggregateBrandLowestPriceInfoByBrandId(brand.getId());
+        aggregationWriter.aggregateBrandLowestPriceInfoByBrandId(brand.getId());
 
         BrandLowestPriceInfo result = brandLowestPriceInfoRepository.findById(new BrandLowestPriceInfoPk(brand.getId(), category.getId())).get();
 
@@ -99,7 +99,7 @@ class AggregationServiceTest extends IntegrationTest{
         Item lowerPriceItem = itemRepository.save(new Item("상의1", 10000D, brand1.getId(), category.getId()));
         Item higherPriceItem = itemRepository.save(new Item("상의2", 20000D, brand2.getId(), category.getId()));
 
-        aggregationService.aggregateCategoryLowestPriceBrand();
+        aggregationWriter.aggregateCategoryLowestPriceBrand();
 
         CategoryLowestPriceBrand categoryLowestPriceBrand = lowestPriceBrandRepository.findById(category.getId()).get();
 
@@ -120,7 +120,7 @@ class AggregationServiceTest extends IntegrationTest{
         Item lowerPriceItem = itemRepository.save(new Item("상의1", 10000D, brand1.getId(), category.getId()));
         Item higherPriceItem = itemRepository.save(new Item("상의2", 20000D, brand2.getId(), category.getId()));
 
-        aggregationService.aggregateCategoryHighestPriceBrand();
+        aggregationWriter.aggregateCategoryHighestPriceBrand();
 
         CategoryHighestPriceBrand categoryHighestPriceBrand = highestPriceBrandRepository.findById(category.getId()).get();
 

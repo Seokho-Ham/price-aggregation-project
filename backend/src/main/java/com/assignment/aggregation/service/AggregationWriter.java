@@ -18,7 +18,7 @@ import static java.util.stream.Collectors.groupingBy;
 @RequiredArgsConstructor
 @Slf4j
 @Service
-public class AggregationService {
+public class AggregationWriter {
 
     private final AggregationQueryRepository aggregationQueryRepository;
     private final BrandLowestPriceInfoRepository brandLowestPriceInfoRepository;
@@ -108,6 +108,11 @@ public class AggregationService {
             .toList();
 
         categoryHighestPriceBrandRepository.saveAll(entities);
+    }
+
+    @Transactional
+    public void deleteBrandLowestPriceInfoByBrandId(Long brandId) {
+        brandLowestPriceInfoRepository.deleteAllById_BrandId(brandId);
     }
 
 }
