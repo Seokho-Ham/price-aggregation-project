@@ -1,7 +1,9 @@
 package com.assignment.aggregation.repository;
 
 import com.assignment.aggregation.repository.dto.BrandCategoryDto;
+import com.assignment.aggregation.repository.dto.CategoryPriceBrandDto;
 import com.assignment.aggregation.repository.dto.QBrandCategoryDto;
+import com.assignment.aggregation.repository.dto.QCategoryPriceBrandDto;
 import com.querydsl.core.types.dsl.BooleanExpression;
 import com.querydsl.jpa.impl.JPAQueryFactory;
 import lombok.RequiredArgsConstructor;
@@ -43,6 +45,34 @@ public class AggregationQueryRepository {
                 itemIsNotDeleted()
             )
             .groupBy(category.id, brand.id)
+            .fetch();
+    }
+
+    public List<CategoryPriceBrandDto> getCategoryLowestPriceBrandDtos() {
+        return jpaQueryFactory
+            .select(new QCategoryPriceBrandDto(category.id, category.name, brand.id, brand.name, item.price.min()))
+            .from(item)
+            .join(brand).on(item.brandId.eq(brand.id))
+            .join(category).on(category.id.eq(item.categoryId))
+            .where(
+                brandIsNotDeleted(),
+                itemIsNotDeleted()
+            )
+            .groupBy(item.categoryId, brand.id)
+            .fetch();
+    }
+
+    public List<CategoryPriceBrandDto> getCategoryHighestPriceBrandDtos() {
+        return jpaQueryFactory
+            .select(new QCategoryPriceBrandDto(category.id, category.name, brand.id, brand.name, item.price.max()))
+            .from(item)
+            .join(brand).on(item.brandId.eq(brand.id))
+            .join(category).on(category.id.eq(item.categoryId))
+            .where(
+                brandIsNotDeleted(),
+                itemIsNotDeleted()
+            )
+            .groupBy(item.categoryId, brand.id)
             .fetch();
     }
 

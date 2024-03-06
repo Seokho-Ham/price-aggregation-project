@@ -1,7 +1,7 @@
 package com.assignment.aggregation.domain;
 
-import jakarta.persistence.EmbeddedId;
 import jakarta.persistence.Entity;
+import jakarta.persistence.Id;
 import lombok.AccessLevel;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
@@ -11,15 +11,17 @@ import lombok.NoArgsConstructor;
 @Entity
 public class CategoryHighestPriceBrand {
 
-    @EmbeddedId
-    private CategoryPriceBrandPk id;
+    @Id
+    private Long categoryId;
     private String categoryName;
+    private Long brandId;
     private String brandName;
-    private Integer price;
+    private Double price;
 
-    public CategoryHighestPriceBrand(Long categoryId, Long brandId, String categoryName, String brandName, Integer price) {
-        this.id = new CategoryPriceBrandPk(categoryId, brandId);
+    public CategoryHighestPriceBrand(Long categoryId, String categoryName, Long brandId, String brandName, Double price) {
+        this.categoryId = categoryId;
         this.categoryName = categoryName;
+        this.brandId = brandId;
         this.brandName = brandName;
         this.price = price;
     }

@@ -9,16 +9,16 @@ import lombok.NoArgsConstructor;
 @Getter
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 @Entity
-public class BrandCategoryLowestPrice {
+public class BrandLowestPriceInfo {
 
     @EmbeddedId
-    private BrandCategoryLowestPricePk id;
+    private BrandLowestPriceInfoPk id;
     private String brandName;
     private String categoryName;
     private Double price;
 
-    public BrandCategoryLowestPrice(Long brandId, Long categoryId, String brandName, String categoryName, double price) {
-        this.id = new BrandCategoryLowestPricePk(brandId, categoryId);
+    public BrandLowestPriceInfo(Long brandId, Long categoryId, String brandName, String categoryName, double price) {
+        this.id = new BrandLowestPriceInfoPk(brandId, categoryId);
         this.brandName = brandName;
         this.categoryName = categoryName;
         this.price = price;

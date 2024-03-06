@@ -12,12 +12,12 @@ import java.io.Serializable;
 @Getter
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 @Embeddable
-public class BrandCategoryLowestPricePk implements Serializable {
+public class BrandLowestPriceInfoPk implements Serializable {
 
     private Long brandId;
     private Long categoryId;
 
-    public BrandCategoryLowestPricePk(Long brandId, Long categoryId) {
+    public BrandLowestPriceInfoPk(Long brandId, Long categoryId) {
         this.brandId = brandId;
         this.categoryId = categoryId;
     }
