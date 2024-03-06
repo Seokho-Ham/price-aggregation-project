@@ -1,6 +1,8 @@
 package com.assignment.brand.service;
 
-import com.assignment.brand.service.dto.BrandChangeEvent;
+import com.assignment.brand.service.dto.BrandCreateEvent;
+import com.assignment.brand.service.dto.BrandDeleteEvent;
+import com.assignment.brand.service.dto.BrandUpdateEvent;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.context.ApplicationEventPublisher;
@@ -13,8 +15,16 @@ public class BrandEventProducer {
 
     private final ApplicationEventPublisher eventPublisher;
 
-    public void produceBrandChangeEvent(Long brandId) {
-        eventPublisher.publishEvent(new BrandChangeEvent(brandId));
+    public void produceBrandCreateEvent(Long brandId) {
+        eventPublisher.publishEvent(new BrandCreateEvent(brandId));
+    }
+
+    public void produceBrandUpdateEvent(Long brandId) {
+        eventPublisher.publishEvent(new BrandUpdateEvent(brandId));
+    }
+
+    public void produceBrandDeleteEvent(Long brandId) {
+        eventPublisher.publishEvent(new BrandDeleteEvent(brandId));
     }
 
 }

@@ -5,7 +5,7 @@ import lombok.RequiredArgsConstructor;
 
 @Getter
 @RequiredArgsConstructor
-public class ItemChangeEvent {
+public class ItemDeleteEvent {
 
     private final Long itemId;
 }

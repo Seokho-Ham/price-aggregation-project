@@ -5,7 +5,7 @@ import lombok.RequiredArgsConstructor;
 
 @Getter
 @RequiredArgsConstructor
-public class BrandChangeEvent{
+public class BrandCreateEvent {
 
     private final Long brandId;
 }
