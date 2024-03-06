@@ -6,7 +6,7 @@ import jakarta.annotation.PostConstruct;
 import jakarta.annotation.PreDestroy;
 import org.springframework.boot.autoconfigure.data.redis.RedisProperties;
 import org.springframework.context.annotation.Configuration;
-import org.springframework.data.redis.repository.configuration.EnableRedisRepositories;
+import org.springframework.core.io.ClassPathResource;
 import org.springframework.util.StringUtils;
 import redis.embedded.RedisServer;
 
@@ -82,7 +82,7 @@ public class EmbeddedRedisConfig {
 
     private File getRedisServerExecutable() {
         try {
-            return new File("src/main/resources/binary/redis/redis-server-7.2.3-mac-arm64");
+            return new ClassPathResource("binary/redis/redis-server-7.2.3-mac-arm64").getFile();
         } catch (Exception e) {
             throw new ApplicationException(ApplicationErrorCode.REDIS_SERVER_EXCEPTION);
         }
