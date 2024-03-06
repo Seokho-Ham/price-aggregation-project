@@ -1,7 +1,7 @@
 package com.assignment.aggregation.repository;
 
-import com.assignment.aggregation.repository.dto.BrandCategoryDataDto;
-import com.assignment.aggregation.repository.dto.QBrandCategoryDataDto;
+import com.assignment.aggregation.repository.dto.BrandCategoryDto;
+import com.assignment.aggregation.repository.dto.QBrandCategoryDto;
 import com.querydsl.core.types.dsl.BooleanExpression;
 import com.querydsl.jpa.impl.JPAQueryFactory;
 import lombok.RequiredArgsConstructor;
@@ -19,8 +19,8 @@ public class AggregationQueryRepository {
 
     private final JPAQueryFactory jpaQueryFactory;
 
-    public List<BrandCategoryDataDto> getAllBrandData() {
-        return jpaQueryFactory.select(new QBrandCategoryDataDto(brand.id, brand.name, category.id, category.name, item.price.min()))
+    public List<BrandCategoryDto> getAllBrandData() {
+        return jpaQueryFactory.select(new QBrandCategoryDto(brand.id, brand.name, category.id, category.name, item.price.min()))
             .from(item)
             .join(brand).on(brand.id.eq(item.brandId))
             .join(category).on(category.id.eq(item.categoryId))
@@ -29,8 +29,8 @@ public class AggregationQueryRepository {
             .fetch();
     }
 
-    public List<BrandCategoryDataDto> findByBrandId(Long brandId) {
-        return jpaQueryFactory.select(new QBrandCategoryDataDto(brand.id, brand.name, category.id, category.name, item.price.min()))
+    public List<BrandCategoryDto> findByBrandLowestPriceByCategoryId(Long brandId) {
+        return jpaQueryFactory.select(new QBrandCategoryDto(brand.id, brand.name, category.id, category.name, item.price.min()))
             .from(item)
             .join(brand).on(brand.id.eq(item.brandId))
             .join(category).on(category.id.eq(item.categoryId))

@@ -1,6 +1,5 @@
 package com.assignment.aggregation.controller.dto;
 
-import com.assignment.aggregation.domain.BrandPriceInfo;
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import lombok.Getter;
@@ -20,7 +19,4 @@ public class BrandPriceInfoResponse {
         this.price = price;
     }
 
-    public static BrandPriceInfoResponse from(BrandPriceInfo info) {
-        return new BrandPriceInfoResponse(info.getBrandName(), info.getPrice());
-    }
 }

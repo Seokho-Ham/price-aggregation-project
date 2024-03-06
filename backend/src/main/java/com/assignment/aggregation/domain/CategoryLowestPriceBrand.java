@@ -1,21 +1,26 @@
 package com.assignment.aggregation.domain;
 
-import jakarta.persistence.Id;
+import jakarta.persistence.EmbeddedId;
+import jakarta.persistence.Entity;
+import lombok.AccessLevel;
 import lombok.Getter;
-import org.springframework.data.redis.core.RedisHash;
+import lombok.NoArgsConstructor;
 
 @Getter
-@RedisHash("category:brand:lowest")
+@NoArgsConstructor(access = AccessLevel.PROTECTED)
+@Entity
 public class CategoryLowestPriceBrand {
 
-    @Id
-    private Long id;
+    @EmbeddedId
+    private CategoryPriceBrandPk id;
     private String categoryName;
-    private BrandPriceInfo lowestPriceBrand;
+    private String brandName;
+    private Integer price;
 
-    public CategoryLowestPriceBrand(Long id, String categoryName, BrandPriceInfo lowestPriceBrand) {
-        this.id = id;
+    public CategoryLowestPriceBrand(Long categoryId, Long brandId, String categoryName, String brandName, Integer price) {
+        this.id = new CategoryPriceBrandPk(categoryId, brandId);
         this.categoryName = categoryName;
-        this.lowestPriceBrand = lowestPriceBrand;
+        this.brandName = brandName;
+        this.price = price;
     }
 }
