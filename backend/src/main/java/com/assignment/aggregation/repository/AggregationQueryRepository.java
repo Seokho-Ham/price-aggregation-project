@@ -24,7 +24,10 @@ public class AggregationQueryRepository {
             .from(item)
             .join(brand).on(brand.id.eq(item.brandId))
             .join(category).on(category.id.eq(item.categoryId))
-            .where(brandIsNotDeleted().and(itemIsNotDeleted()))
+            .where(
+                brandIsNotDeleted(),
+                itemIsNotDeleted()
+            )
             .groupBy(category.id, brand.id)
             .fetch();
     }
@@ -36,7 +39,8 @@ public class AggregationQueryRepository {
             .join(category).on(category.id.eq(item.categoryId))
             .where(
                 eqBrandId(brandId),
-                brandIsNotDeleted().and(itemIsNotDeleted())
+                brandIsNotDeleted(),
+                itemIsNotDeleted()
             )
             .groupBy(category.id, brand.id)
             .fetch();
