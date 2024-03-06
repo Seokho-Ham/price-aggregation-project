@@ -16,7 +16,6 @@ import java.io.IOException;
 import java.io.InputStreamReader;
 import java.util.Objects;
 
-@EnableRedisRepositories(basePackages = "com.assignment.aggregation.domain")
 @Configuration
 public class EmbeddedRedisConfig {
 
