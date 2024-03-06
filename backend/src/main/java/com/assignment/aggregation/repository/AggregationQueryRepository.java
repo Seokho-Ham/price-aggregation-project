@@ -1,5 +1,6 @@
 package com.assignment.aggregation.repository;
 
+import com.assignment.aggregation.domain.BrandTotalPrice;
 import com.assignment.aggregation.repository.dto.BrandCategoryDto;
 import com.assignment.aggregation.repository.dto.CategoryPriceBrandDto;
 import com.assignment.aggregation.repository.dto.QBrandCategoryDto;
@@ -11,6 +12,7 @@ import org.springframework.stereotype.Repository;
 
 import java.util.List;
 
+import static com.assignment.aggregation.domain.QBrandTotalPrice.brandTotalPrice;
 import static com.assignment.brand.domain.QBrand.brand;
 import static com.assignment.category.domain.QCategory.category;
 import static com.assignment.item.domain.QItem.item;
@@ -74,6 +76,14 @@ public class AggregationQueryRepository {
             )
             .groupBy(item.categoryId, brand.id)
             .fetch();
+    }
+
+    public BrandTotalPrice getLowestTotalPriceBrand() {
+        return jpaQueryFactory.select(brandTotalPrice)
+            .from(brandTotalPrice)
+            .where(brandTotalPrice.price.eq(brandTotalPrice.price.min()))
+            .groupBy(brandTotalPrice.brandId)
+            .fetchFirst();
     }
 
     private BooleanExpression eqBrandId(Long brandId) {

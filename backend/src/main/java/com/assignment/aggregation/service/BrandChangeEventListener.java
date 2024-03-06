@@ -13,24 +13,23 @@ import org.springframework.transaction.event.TransactionalEventListener;
 @Component
 public class BrandChangeEventListener {
 
-    private final AggregationWriter aggregationWriter;
+    private final AggregationService aggregationService;
 
     @TransactionalEventListener
     public void handleBrandCreate(BrandCreateEvent event) {
-        //해당 브랜드의 카테고리별 최저가 정보 업데이트
-        log.info("[aggregation-brand] 브랜드 데이터 변경에 따른 데이터 집계 성공");
+        aggregationService.aggregateOnBrandCreate(event.getBrandId());
     }
 
     @TransactionalEventListener
     public void handleBrandUpdate(BrandUpdateEvent event) {
         //카테고리의 최저가, 최고가 정보 업데이트
-        log.info("[aggregation-brand] 브랜드 데이터 변경에 따른 데이터 집계 성공");
+        aggregationService.aggregateOnBrandUpdate();
     }
 
     @TransactionalEventListener
     public void handleBrandDelete(BrandDeleteEvent event) {
         //해당 브랜드의 카테고리별 데이터 삭제
         //카테고리의 최저가, 최고가 정보 재집계
-        log.info("[aggregation-brand] 브랜드 데이터 변경에 따른 데이터 집계 성공");
+        aggregationService.aggregateOnBrandDelete(event.getBrandId());
     }
 }
