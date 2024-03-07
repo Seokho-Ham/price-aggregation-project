@@ -95,24 +95,45 @@ public class AggregationService {
         return new CategoriesLowestPriceBrandsResponse(lowestPriceBrandResponses, totalPrice);
     }
 
+    /**
+     * 브랜드 정보가 추가 됐을때 데이터를 재집계하는 기능입니다.
+     *
+     * 1. 추가된 브랜드의 정보가 담긴 브랜드 최저가 정보를 집계한다.
+     *
+     */
     @Transactional(propagation = Propagation.REQUIRES_NEW)
     public void aggregateOnBrandCreate(Long brandId) {
         aggregationWriter.aggregateBrandLowestPriceInfoForOneBrandAndAllCategories(brandId);
     }
 
+    /**
+     * 브랜드 정보가 업데이트 됐을때 데이터를 재집계하는 기능입니다.
+     *
+     * 1. 업데이트 브랜드의 정보가 담긴 브랜드 최저가 정보를 재집계 후 기존 데이터를 삭제한다.
+     * 2. 카테고리별 최저가, 최고가 데이터를 재집계한다.
+     *
+     */
     @Transactional(propagation = Propagation.REQUIRES_NEW)
     public void aggregateOnBrandUpdate(Long brandId) {
-        aggregationWriter.deleteAllBrandLowestPriceInfoByBrandId(brandId);
+        List<BrandLowestPriceInfo> originalData = brandLowestPriceInfoRepository.findAllByBrandIdOrderById(brandId);
 
         List<BrandLowestPriceInfo> brandLowestPriceInfos = aggregationWriter.aggregateBrandLowestPriceInfoForOneBrandAndAllCategories(brandId);
         if (ObjectUtils.isNotEmpty(brandLowestPriceInfos)) {
             aggregationCacheWriter.saveAggregatedBrandDataInCache(brandLowestPriceInfos);
         }
+        aggregationWriter.deleteAllOriginalData(originalData);
 
         aggregateCategoryLowestPriceBrandForAllCategories();
         aggregateCategoryHighestPriceBrandForAllCategories();
     }
 
+    /**
+     * 브랜드 정보가 삭제 됐을때 데이터를 재집계하는 기능입니다.
+     *
+     * 1. 삭제된 브랜드의 정보가 담긴 데이터를 DB와 캐시로부터 삭제한다.
+     * 2. 카테고리별 최저가, 최고가 데이터를 재집계한다.
+     *
+     */
     @Transactional(propagation = Propagation.REQUIRES_NEW)
     public void aggregateOnBrandDelete(Long brandId) {
         aggregationWriter.deleteBrandTotalPriceByBrandId(brandId);
@@ -129,6 +150,136 @@ public class AggregationService {
         aggregateCategoryHighestPriceBrandForAllCategories();
     }
 
+
+    /**
+     * 상품 정보가 추가 됐을때 데이터를 재집계하는 기능입니다.
+     * <p/>
+     * <p>
+     * [카테고리의 최저가, 최고가 갱신 로직]
+     * 1. 상품이 속한 카테고리의 최저가, 최고가 정보를 조회한다.
+     * 2. 조회한 결과에서 아래 조건을 검사한다.
+     * - 최저가: (해당 상품의 가격 <= 현시점 최저가)
+     * - 최고가: (해당 상품의 가격 >= 현시점 최고가)
+     * 3. 조건에 해당하면 해당 카테고리에 대해 데이터를 재집계 후 기존 데이터를 삭제한다..
+     * <p>
+     * [브랜드의 카테고리별 최저가 갱신 로직]
+     * 1. 상품이 속한 브랜드의 해당 카테고리의 최저가 정보를 조회한다.
+     * 2. 다음 조건을 검사한다.
+     * - 해당 상품의 가격 < 브랜드의 해당 카테고리의 최저가
+     * 3. 조건에 해당하면 상품이 속한 브랜드의 카테고리의 최저가 정보를 재집계 후 기존 데이터를 삭제한다.
+     */
+    @Transactional(propagation = Propagation.REQUIRES_NEW)
+    public void aggregateOnItemCreate(ItemDto itemDto) {
+        List<CategoryLowestPriceBrand> originalLowestPriceBrands = categoryLowestPriceBrandRepository.findAllByCategoryId(itemDto.getCategoryId());
+        if (originalLowestPriceBrands.stream().anyMatch(brand -> brand.getPrice() >= itemDto.getPrice())) {
+            aggregateCategoryLowestPriceBrandForSingleCategory(itemDto.getCategoryId());
+            aggregationWriter.deleteAllOriginalCategoryLowestPriceBrands(originalLowestPriceBrands);
+        }
+
+        List<CategoryHighestPriceBrand> originalHighestPriceBrands = categoryHighestPriceBrandRepository.findAllByCategoryId(itemDto.getCategoryId());
+        if (originalHighestPriceBrands.stream().anyMatch(brand -> brand.getPrice() <= itemDto.getPrice())) {
+            aggregateCategoryHighestPriceBrandForSingleCategory(itemDto.getCategoryId());
+            aggregationWriter.deleteAllOriginalCategoryHighestPriceBrands(originalHighestPriceBrands);
+        }
+
+        Optional<BrandLowestPriceInfo> brandLowestPriceInfo = brandLowestPriceInfoRepository.findByBrandIdAndCategoryId(itemDto.getBrandId(), itemDto.getCategoryId());
+        brandLowestPriceInfo.ifPresentOrElse(
+            info -> {
+                if (itemDto.getPrice() < info.getPrice()) {
+                    List<BrandLowestPriceInfo> brandLowestPriceInfos = aggregationWriter.aggregateBrandLowestPriceInfoForOneBrandAndOneCategory(itemDto.getBrandId(), itemDto.getCategoryId());
+                    aggregationCacheWriter.saveAggregatedBrandDataInCache(brandLowestPriceInfos);
+                    aggregationWriter.deleteOriginalBrandLowestPriceInfo(brandLowestPriceInfo.get());
+                }
+            },
+            () -> {
+                List<BrandLowestPriceInfo> brandLowestPriceInfos = aggregationWriter.aggregateBrandLowestPriceInfoForOneBrandAndOneCategory(itemDto.getBrandId(), itemDto.getCategoryId());
+                aggregationCacheWriter.saveAggregatedBrandDataInCache(brandLowestPriceInfos);
+            }
+        );
+
+    }
+
+    /**
+     * 상품 정보가 업데이트 됐을때 데이터를 재집계하는 기능입니다.
+     * <p/>
+     * <p>
+     * [카테고리의 최저가, 최고가 갱신 로직]
+     * 1. 상품이 속한 카테고리의 최저가, 최고가 정보를 재집계한다.
+     * 2. 해당 카테고리에 대한 기존 데이터를 삭제한다.
+     * <p>
+     * [브랜드의 카테고리별 최저가 갱신 로직]
+     * 1. 상품이 속한 브랜드의 카테고리의 최저가 정보를 재집계한다.
+     * 2. 상품이 속한 브랜드의 해당 카테고리의 기존 최저가 정보를 삭제한다.
+     */
+    @Transactional(propagation = Propagation.REQUIRES_NEW)
+    public void aggregateOnItemUpdate(ItemDto itemDto) {
+
+        List<CategoryLowestPriceBrand> originalLowestPriceBrands = categoryLowestPriceBrandRepository.findAllByCategoryId(itemDto.getCategoryId());
+        aggregateCategoryLowestPriceBrandForSingleCategory(itemDto.getCategoryId());
+        aggregationWriter.deleteAllOriginalCategoryLowestPriceBrands(originalLowestPriceBrands);
+
+        List<CategoryHighestPriceBrand> originalHighestPriceBrands = categoryHighestPriceBrandRepository.findAllByCategoryId(itemDto.getCategoryId());
+        aggregateCategoryHighestPriceBrandForSingleCategory(itemDto.getCategoryId());
+        aggregationWriter.deleteAllOriginalCategoryHighestPriceBrands(originalHighestPriceBrands);
+
+        Optional<BrandLowestPriceInfo> originalBrandLowestPriceInfo = brandLowestPriceInfoRepository.findByBrandIdAndCategoryId(itemDto.getBrandId(), itemDto.getCategoryId());
+        List<BrandLowestPriceInfo> brandLowestPriceInfos = aggregationWriter.aggregateBrandLowestPriceInfoForOneBrandAndOneCategory(itemDto.getBrandId(), itemDto.getCategoryId());
+        if (ObjectUtils.isEmpty(brandLowestPriceInfos)) {
+            brandLowestPriceInfos = aggregationWriter.aggregateBrandLowestPriceInfoForOneBrandAndAllCategories(itemDto.getBrandId());
+        }
+        aggregationCacheWriter.saveAggregatedBrandDataInCache(brandLowestPriceInfos);
+        originalBrandLowestPriceInfo.ifPresent(aggregationWriter::deleteOriginalBrandLowestPriceInfo);
+
+    }
+
+
+    /**
+     * 상품 정보가 삭제 됐을때 데이터를 재집계하는 기능입니다.
+     * <p/>
+     * <p>
+     * [카테고리의 최저가, 최고가 갱신 로직]
+     * 1. 상품이 속한 카테고리의 최저가, 최고가 정보를 조회한다.
+     * 2. 조회한 결과에서 아래 조건을 검사한다.
+     * - 최저가: (해당 상품의 가격 == 현시점 최저가)
+     * - 최고가: (해당 상품의 가격 == 현시점 최고가)
+     * 3. 조건에 해당하면 해당 상품이 속한 브랜드Id를 바탕으로 데이터를 재집계 후 기존 데이터를 삭제한다.
+     * <p>
+     * [브랜드의 카테고리별 최저가 갱신 로직]
+     * 1. 상품이 속한 브랜드의 해당 카테고리의 최저가 정보를 조회한다.
+     * 2. 다음 조건을 검사한다.
+     *      - 해당 상품의 가격 == 브랜드의 해당 카테고리의 최저가
+     * 3. 조건에 해당하면 상품이 속한 브랜드의 카테고리의 최저가 정보를 재집계 후 기존 데이터를 삭제한다.
+     */
+    @Transactional(propagation = Propagation.REQUIRES_NEW)
+    public void aggregateOnItemDelete(ItemDto itemDto) {
+
+        List<CategoryLowestPriceBrand> originalLowestPriceBrands = categoryLowestPriceBrandRepository.findAllByCategoryId(itemDto.getCategoryId());
+        if (originalLowestPriceBrands.stream().anyMatch(data -> data.getPrice().equals(itemDto.getPrice()))) {
+            aggregateCategoryLowestPriceBrandForSingleCategory(itemDto.getCategoryId());
+        }
+        aggregationWriter.deleteAllOriginalCategoryLowestPriceBrands(originalLowestPriceBrands);
+
+        List<CategoryHighestPriceBrand> originalHighestPriceBrands = categoryHighestPriceBrandRepository.findAllByCategoryId(itemDto.getCategoryId());
+        if (originalHighestPriceBrands.stream().anyMatch(data -> data.getPrice().equals(itemDto.getPrice()))) {
+            aggregateCategoryHighestPriceBrandForSingleCategory(itemDto.getCategoryId());
+        }
+        aggregationWriter.deleteAllOriginalCategoryHighestPriceBrands(originalHighestPriceBrands);
+
+        Optional<BrandLowestPriceInfo> brandLowestPriceInfo = brandLowestPriceInfoRepository.findByBrandIdAndCategoryId(itemDto.getBrandId(), itemDto.getCategoryId());
+        List<BrandLowestPriceInfo> brandLowestPriceInfos = aggregationWriter.aggregateBrandLowestPriceInfoForOneBrandAndOneCategory(itemDto.getBrandId(), itemDto.getCategoryId());
+        if (ObjectUtils.isEmpty(brandLowestPriceInfos)) {
+            brandLowestPriceInfos = aggregationWriter.aggregateBrandLowestPriceInfoForOneBrandAndAllCategories(itemDto.getBrandId());
+        }
+        aggregationCacheWriter.saveAggregatedBrandDataInCache(brandLowestPriceInfos);
+        brandLowestPriceInfo.ifPresent(aggregationWriter::deleteOriginalBrandLowestPriceInfo);
+
+
+    }
+
+    /**
+     * 전체 집계 데이터를 재생성할때 실행하는 기능입니다.(수동으로 데이터를 최신화해야할때만 사용합니다.)
+     *
+     */
     @Transactional(propagation = Propagation.REQUIRES_NEW)
     public void aggregateAllDatas() {
         List<BrandCategoryDto> dtos = aggregationQueryRepository.getAllBrandData();
@@ -145,130 +296,6 @@ public class AggregationService {
         aggregationCacheWriter.saveAggregatedBrandDataInCache(brandLowestPriceInfos);
         aggregationCacheWriter.saveAggregatedCategoryLowestPriceBrandsInCache(categoryLowestPriceBrands);
         aggregationCacheWriter.saveAggregatedCategoryHighestPriceBrandsInCache(categoryHighestPriceBrands);
-    }
-
-
-    /**
-     * 상품 정보가 추가 됐을때 데이터를 재집계하는 기능입니다.
-     * <p/>
-     * <p>
-     * [카테고리의 최저가, 최고가 갱신 로직]
-     * 1. 상품이 속한 카테고리의 최저가, 최고가 정보를 조회한다.
-     * 2. 조회한 결과에서 아래 조건을 검사한다.
-     * - 최저가: (해당 상품의 가격 <= 현시점 최저가)
-     * - 최고가: (해당 상품의 가격 >= 현시점 최고가)
-     * 3. 조건에 해당하면 해당 카테고리에 대해 데이터를 삭제 후 재집계한다.
-     * <p>
-     * [브랜드의 카테고리별 최저가 갱신 로직]
-     * 1. 상품이 속한 브랜드의 해당 카테고리의 최저가 정보를 조회한다.
-     * 2. 다음 조건을 검사한다.
-     * - 해당 상품의 가격 < 브랜드의 해당 카테고리의 최저가
-     * 3. 조건에 해당하면 상품이 속한 브랜드의 카테고리의 최저가 정보를 삭제 후 재집계한다.
-     */
-    @Transactional(propagation = Propagation.REQUIRES_NEW)
-    public void aggregateOnItemCreate(ItemDto itemDto) {
-        List<CategoryLowestPriceBrand> categoryLowestPriceBrands = categoryLowestPriceBrandRepository.findAllByCategoryId(itemDto.getCategoryId());
-        if (categoryLowestPriceBrands.stream().anyMatch(brand -> brand.getPrice() >= itemDto.getPrice())) {
-            aggregationWriter.deleteAllCategoryLowestPriceBrandByCategoryId(itemDto.getCategoryId());
-            aggregateCategoryLowestPriceBrandForSingleCategory(itemDto.getCategoryId());
-        }
-
-        List<CategoryHighestPriceBrand> categoryHighestPriceBrands = categoryHighestPriceBrandRepository.findAllByCategoryId(itemDto.getCategoryId());
-        if (categoryHighestPriceBrands.stream().anyMatch(brand -> brand.getPrice() <= itemDto.getPrice())) {
-            aggregationWriter.deleteAllCategoryHighestPriceBrandByCategoryId(itemDto.getCategoryId());
-            aggregateCategoryHighestPriceBrandForSingleCategory(itemDto.getCategoryId());
-        }
-
-        Optional<BrandLowestPriceInfo> brandLowestPriceInfo = brandLowestPriceInfoRepository.findByBrandIdAndCategoryId(itemDto.getBrandId(), itemDto.getCategoryId());
-        brandLowestPriceInfo.ifPresentOrElse(
-            info -> {
-                if (itemDto.getPrice() < info.getPrice()) {
-                    aggregationWriter.deleteOneBrandLowestPriceInfoByBrandIdAndCategoryId(itemDto.getBrandId(), itemDto.getCategoryId());
-                    List<BrandLowestPriceInfo> brandLowestPriceInfos = aggregationWriter.aggregateBrandLowestPriceInfoForOneBrandAndOneCategory(itemDto.getBrandId(), itemDto.getCategoryId());
-                    aggregationCacheWriter.saveAggregatedBrandDataInCache(brandLowestPriceInfos);
-                }
-            },
-            () -> {
-                List<BrandLowestPriceInfo> brandLowestPriceInfos = aggregationWriter.aggregateBrandLowestPriceInfoForOneBrandAndOneCategory(itemDto.getBrandId(), itemDto.getCategoryId());
-                aggregationCacheWriter.saveAggregatedBrandDataInCache(brandLowestPriceInfos);
-            }
-        );
-
-    }
-
-    /**
-     * 상품 정보가 업데이트 됐을때 데이터를 재집계하는 기능입니다.
-     * <p/>
-     * <p>
-     * [카테고리의 최저가, 최고가 갱신 로직]
-     * 1. 상품이 속한 카테고리의 최저가, 최고가 정보를 삭제한다.
-     * 2. 해당 카테고리에 대한 데이터를 삭제 후 재집계한다.
-     * <p>
-     * [브랜드의 카테고리별 최저가 갱신 로직]
-     * 1. 상품이 속한 브랜드의 해당 카테고리의 최저가 정보를 삭제한다.
-     * 2. 상품이 속한 브랜드의 카테고리의 최저가 정보를 재집계한다.
-     */
-    @Transactional(propagation = Propagation.REQUIRES_NEW)
-    public void aggregateOnItemUpdate(ItemDto itemDto) {
-
-        aggregationWriter.deleteAllCategoryLowestPriceBrandByCategoryId(itemDto.getCategoryId());
-        aggregateCategoryLowestPriceBrandForSingleCategory(itemDto.getCategoryId());
-
-        aggregationWriter.deleteAllCategoryHighestPriceBrandByCategoryId(itemDto.getCategoryId());
-        aggregateCategoryHighestPriceBrandForSingleCategory(itemDto.getCategoryId());
-
-        aggregationWriter.deleteOneBrandLowestPriceInfoByBrandIdAndCategoryId(itemDto.getBrandId(), itemDto.getCategoryId());
-        List<BrandLowestPriceInfo> brandLowestPriceInfos = aggregationWriter.aggregateBrandLowestPriceInfoForOneBrandAndOneCategory(itemDto.getBrandId(), itemDto.getCategoryId());
-        if (ObjectUtils.isEmpty(brandLowestPriceInfos)) {
-            brandLowestPriceInfos = aggregationWriter.aggregateBrandLowestPriceInfoForOneBrandAndAllCategories(itemDto.getBrandId());
-        }
-        aggregationCacheWriter.saveAggregatedBrandDataInCache(brandLowestPriceInfos);
-
-    }
-
-
-    /**
-     * 상품 정보가 삭제 됐을때 데이터를 재집계하는 기능입니다.
-     * <p/>
-     * <p>
-     * [카테고리의 최저가, 최고가 갱신 로직]
-     * 1. 상품이 속한 카테고리의 최저가, 최고가 정보를 조회한다.
-     * 2. 조회한 결과에서 아래 조건을 검사한다.
-     * - 최저가: (해당 상품의 가격 == 현시점 최저가)
-     * - 최고가: (해당 상품의 가격 == 현시점 최고가)
-     * 3. 조건에 해당하면 해당 상품이 속한 브랜드Id를 바탕으로 데이터를 삭제 후 재집계한다.
-     * <p>
-     * [브랜드의 카테고리별 최저가 갱신 로직]
-     * 1. 상품이 속한 브랜드의 해당 카테고리의 최저가 정보를 조회한다.
-     * 2. 다음 조건을 검사한다.
-     * - 해당 상품의 가격 == 브랜드의 해당 카테고리의 최저가
-     * 3. 조건에 해당하면 상품이 속한 브랜드의 카테고리의 최저가 정보를 삭제 후 재집계한다.
-     */
-    @Transactional(propagation = Propagation.REQUIRES_NEW)
-    public void aggregateOnItemDelete(ItemDto itemDto) {
-
-        List<CategoryLowestPriceBrand> categoryLowestPriceBrands = categoryLowestPriceBrandRepository.findAllByCategoryId(itemDto.getCategoryId());
-        if (categoryLowestPriceBrands.stream().anyMatch(data -> data.getPrice().equals(itemDto.getPrice()))) {
-            aggregationWriter.deleteAllCategoryLowestPriceBrandByBrandId(itemDto.getBrandId());
-            aggregateCategoryLowestPriceBrandForSingleCategory(itemDto.getCategoryId());
-        }
-
-        List<CategoryHighestPriceBrand> categoryHighestPriceBrands = categoryHighestPriceBrandRepository.findAllByCategoryId(itemDto.getCategoryId());
-        if (categoryHighestPriceBrands.stream().anyMatch(data -> data.getPrice().equals(itemDto.getPrice()))) {
-            aggregationWriter.deleteAllCategoryHighestPriceBrandByBrandId(itemDto.getBrandId());
-            aggregateCategoryHighestPriceBrandForSingleCategory(itemDto.getCategoryId());
-        }
-
-        Optional<BrandLowestPriceInfo> brandLowestPriceInfo = brandLowestPriceInfoRepository.findByBrandIdAndCategoryId(itemDto.getBrandId(), itemDto.getCategoryId());
-        if (brandLowestPriceInfo.isPresent() && itemDto.getPrice().equals(brandLowestPriceInfo.get().getPrice())) {
-            aggregationWriter.deleteOneBrandLowestPriceInfoByBrandIdAndCategoryId(itemDto.getBrandId(), itemDto.getCategoryId());
-        }
-        List<BrandLowestPriceInfo> brandLowestPriceInfos = aggregationWriter.aggregateBrandLowestPriceInfoForOneBrandAndOneCategory(itemDto.getBrandId(), itemDto.getCategoryId());
-        if (ObjectUtils.isEmpty(brandLowestPriceInfos)) {
-            brandLowestPriceInfos = aggregationWriter.aggregateBrandLowestPriceInfoForOneBrandAndAllCategories(itemDto.getBrandId());
-        }
-        aggregationCacheWriter.saveAggregatedBrandDataInCache(brandLowestPriceInfos);
-
     }
 
     private void aggregateCategoryLowestPriceBrandForSingleCategory(Long categoryId) {

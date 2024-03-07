@@ -1,6 +1,7 @@
 package com.assignment.aggregation.service;
 
 import com.assignment.aggregation.domain.*;
+import com.assignment.aggregation.exception.NoPriceDataException;
 import com.assignment.aggregation.repository.AggregationQueryRepository;
 import com.assignment.aggregation.repository.dto.BrandCategoryDto;
 import com.assignment.aggregation.repository.dto.CategoryPriceBrandDto;
@@ -138,8 +139,8 @@ public class AggregationWriter {
     }
 
     @Transactional
-    public void deleteOneBrandLowestPriceInfoByBrandIdAndCategoryId(Long brandId, Long categoryId) {
-        brandLowestPriceInfoRepository.deleteByBrandIdAndCategoryId(brandId, categoryId);
+    public void deleteOriginalBrandLowestPriceInfo(BrandLowestPriceInfo originalData) {
+        brandLowestPriceInfoRepository.delete(originalData);
     }
 
     @Transactional
@@ -148,13 +149,13 @@ public class AggregationWriter {
     }
 
     @Transactional
-    public void deleteAllCategoryLowestPriceBrandByCategoryId(Long categoryId) {
-        categoryLowestPriceBrandRepository.deleteAllByCategoryId(categoryId);
+    public void deleteAllOriginalCategoryLowestPriceBrands(List<CategoryLowestPriceBrand> originalData) {
+        categoryLowestPriceBrandRepository.deleteAll(originalData);
     }
 
     @Transactional
-    public void deleteAllCategoryHighestPriceBrandByCategoryId(Long categoryId) {
-        categoryHighestPriceBrandRepository.deleteAllByCategoryId(categoryId);
+    public void deleteAllOriginalCategoryHighestPriceBrands(List<CategoryHighestPriceBrand> originalData) {
+        categoryHighestPriceBrandRepository.deleteAll(originalData);
     }
 
     @Transactional
@@ -208,7 +209,7 @@ public class AggregationWriter {
             .map(dtoList -> {
                 double maxPrice = dtoList.stream()
                     .mapToDouble(CategoryPriceBrandDto::getPrice)
-                    .max().orElseThrow();
+                    .max().orElseThrow(NoPriceDataException::new);
 
                 return dtoList.stream()
                     .filter(dto -> dto.getPrice().equals(maxPrice))
@@ -230,7 +231,7 @@ public class AggregationWriter {
             .map(dtoList -> {
                 double minPrice = dtoList.stream()
                     .mapToDouble(CategoryPriceBrandDto::getPrice)
-                    .min().orElseThrow();
+                    .min().orElseThrow(NoPriceDataException::new);
 
                 return dtoList.stream()
                     .filter(dto -> dto.getPrice().equals(minPrice))
@@ -240,7 +241,12 @@ public class AggregationWriter {
             .map(data -> new CategoryLowestPriceBrand(data.getCategoryId(), data.getCategoryName(), data.getBrandId(),  data.getBrandName(), data.getPrice()))
             .toList();
 
+
         categoryLowestPriceBrandRepository.saveAll(entities);
         return entities;
+    }
+
+    public void deleteAllOriginalData(List<BrandLowestPriceInfo> originalData) {
+        brandLowestPriceInfoRepository.deleteAll(originalData);
     }
 }

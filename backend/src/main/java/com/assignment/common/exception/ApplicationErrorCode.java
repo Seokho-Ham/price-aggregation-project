@@ -28,6 +28,7 @@ public enum ApplicationErrorCode {
 
     //Aggregation
     LOWEST_TOTAL_PRICE_BRAND_NOT_FOUND("AGGREGATION-001", "총액 최저가 브랜드에 관련해 집계된 데이터가 존재하지 않습니다."),
+    NO_PRICE_DATA("AGGREGATION-002", "카테고리의 최저가, 최고가 관련 가격 정보가 존재하지 않습니다."),
 
     //Redis
     CACHE_NOT_FOUND("REDIS-001", "등록된 캐시를 찾지 못했습니다."),
