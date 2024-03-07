@@ -10,6 +10,4 @@ public interface CategoryLowestPriceBrandRepository extends JpaRepository<Catego
 
     void deleteAllByBrandId(Long brandId);
 
-    void deleteAllByCategoryId(Long categoryId);
-
 }

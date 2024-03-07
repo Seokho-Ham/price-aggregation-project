@@ -8,11 +8,13 @@ import com.assignment.item.domain.Item;
 import com.assignment.item.domain.ItemRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.boot.CommandLineRunner;
+import org.springframework.context.annotation.Profile;
 import org.springframework.stereotype.Component;
 
 import java.util.ArrayList;
 import java.util.List;
 
+@Profile("local")
 @RequiredArgsConstructor
 @Component
 public class DataInitCommandLineRunner implements CommandLineRunner {

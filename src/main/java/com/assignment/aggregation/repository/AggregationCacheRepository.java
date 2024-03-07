@@ -93,7 +93,7 @@ public class AggregationCacheRepository {
     }
 
     public Optional<List<CategoryLowestPriceBrand>> findCategoryLowestPriceBrands(String categoryId) {
-        String data = (String) redisTemplate.opsForHash().get(CATEGORY_HIGHEST_PRICE_KEY, categoryId);
+        String data = (String) redisTemplate.opsForHash().get(CATEGORY_LOWEST_PRICE_KEY, categoryId);
         try {
             return Optional.of((objectMapper.readValue(data, new TypeReference<>() {
             })));
@@ -107,7 +107,7 @@ public class AggregationCacheRepository {
     }
 
     public Optional<List<CategoryHighestPriceBrand>> findCategoryHighestPriceBrands(String categoryId) {
-        String data = (String) redisTemplate.opsForHash().get(CATEGORY_LOWEST_PRICE_KEY, categoryId);
+        String data = (String) redisTemplate.opsForHash().get(CATEGORY_HIGHEST_PRICE_KEY, categoryId);
         try {
             return Optional.of((objectMapper.readValue(data, new TypeReference<>() {
             })));

@@ -4,6 +4,7 @@ import com.assignment.common.exception.ApplicationErrorCode;
 import com.assignment.common.exception.ApplicationException;
 import jakarta.annotation.PostConstruct;
 import jakarta.annotation.PreDestroy;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.boot.autoconfigure.data.redis.RedisProperties;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.core.io.ClassPathResource;
@@ -16,6 +17,7 @@ import java.io.IOException;
 import java.io.InputStreamReader;
 import java.util.Objects;
 
+@Slf4j
 @Configuration
 public class EmbeddedRedisConfig {
 
@@ -25,6 +27,7 @@ public class EmbeddedRedisConfig {
     public EmbeddedRedisConfig(RedisProperties redisProperties) {
         this.redisProperties = redisProperties;
     }
+
     @PostConstruct
     public void startRedis() throws IOException {
         int port = isRedisRunning() ? findAvailablePort() : redisProperties.getPort();
@@ -37,6 +40,7 @@ public class EmbeddedRedisConfig {
                 .build();
         }
         redisServer.start();
+        log.debug("[Redis Server Start] host: {} port: {}", redisProperties.getHost(), redisProperties.getPort());
     }
 
     @PreDestroy

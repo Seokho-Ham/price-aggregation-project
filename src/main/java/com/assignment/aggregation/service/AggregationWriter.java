@@ -27,6 +27,8 @@ public class AggregationWriter {
 
     /**
      * 전달받은 brandId와 categoryId에 해당하는 브랜드의 단일 카테고리의 최저가 정보를 집계하는 로직
+     * 1. 브랜드의 카테고리별 최저가 정보를 집계 후 repository에 저장한다.
+     * 2. 해당 브랜드의 총액 정보를 repository에 저장한다.
      */
     @Transactional
     public List<BrandLowestPriceInfo> aggregateBrandLowestPriceInfoForOneBrandAndOneCategory(Long brandId, Long categoryId) {
@@ -40,16 +42,17 @@ public class AggregationWriter {
         brandLowestPriceInfoRepository.save(new BrandLowestPriceInfo(dto.getBrandId(), dto.getCategoryId(), dto.getBrandName(), dto.getCategoryName(), dto.getPrice()));
 
         List<BrandCategoryDto> dtos = aggregationQueryRepository.findBrandLowestPriceByBrandId(brandId);
-        List<BrandLowestPriceInfo> entities = dtos.stream()
+        aggregateAllBrandsTotalPrice(dtos);
+
+        return dtos.stream()
             .map(data -> new BrandLowestPriceInfo(data.getBrandId(), data.getCategoryId(), data.getBrandName(), data.getCategoryName(), data.getPrice()))
             .toList();
-        aggregateAllBrandsTotalPrice(dtos);
-        return entities;
     }
 
     /**
      * 전달받은 brandId에 해당하는 브랜드의 카테고리별 최저가 정보를 집계하는 로직
-     *
+     * 1. 브랜드의 카테고리별 최저가 정보를 집계 후 repository에 저장한다.
+     * 2. 해당 브랜드의 총액 정보를 repository에 저장한다.
      */
     @Transactional
     public List<BrandLowestPriceInfo> aggregateBrandLowestPriceInfoForOneBrandAndAllCategories(Long brandId) {
@@ -67,7 +70,9 @@ public class AggregationWriter {
 
     /**
      * 단일 카테고리의 최저가 브랜드 정보를 집계하는 로직
-     *
+     * <p/>
+     * 1. 단일 카테고리의 각 브랜드가 가진 최저가 정보를 조회한다.
+     * 2. 최저가를 가진 브랜드를 필터링하여 집계 데이터로 변환 후 repository에 저장한다.
      */
     @Transactional
     public List<CategoryLowestPriceBrand> aggregateCategoryLowestPriceBrandForCategory(Long categoryId) {
@@ -246,7 +251,7 @@ public class AggregationWriter {
         return entities;
     }
 
-    public void deleteAllOriginalData(List<BrandLowestPriceInfo> originalData) {
+    public void deleteAllOriginalBrandLowestPriceInfoData(List<BrandLowestPriceInfo> originalData) {
         brandLowestPriceInfoRepository.deleteAll(originalData);
     }
 }

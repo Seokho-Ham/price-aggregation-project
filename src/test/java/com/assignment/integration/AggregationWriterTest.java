@@ -152,7 +152,6 @@ class AggregationWriterTest extends IntegrationTest{
                 assertThat(result.getBrandId()).isEqualTo(brand1.getId());
                 assertThat(result.getPrice()).isEqualTo(lowerPriceItem.getPrice());
             });
-
         }
 
         @DisplayName("상품정보가 없을 경우 빈배열을 반환한다.")

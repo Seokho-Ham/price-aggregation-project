@@ -25,6 +25,8 @@ spring:
     redis:
       host: localhost
       port: 6370
+      repositories:
+        enabled: false
 
 springdoc:
   swagger-ui:

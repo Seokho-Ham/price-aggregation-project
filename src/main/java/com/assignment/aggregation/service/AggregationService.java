@@ -2,6 +2,9 @@ package com.assignment.aggregation.service;
 
 import com.assignment.aggregation.controller.dto.*;
 import com.assignment.aggregation.domain.*;
+import com.assignment.aggregation.exception.CategoryHighestPriceBrandNotFoundException;
+import com.assignment.aggregation.exception.CategoryLowestPriceBrandNotFoundException;
+import com.assignment.aggregation.exception.LowestTotalPriceBrandNotFoundException;
 import com.assignment.aggregation.repository.AggregationCacheRepository;
 import com.assignment.aggregation.repository.AggregationQueryRepository;
 import com.assignment.aggregation.repository.dto.BrandCategoryDto;
@@ -38,8 +41,8 @@ public class AggregationService {
     public LowestTotalPriceBrandResponse getLowestTotalBrand() {
         List<BrandLowestPriceInfo> brandLowestPriceData = findBrandLowestPriceInfos();
 
-        if (brandLowestPriceData.isEmpty()) {
-            return new LowestTotalPriceBrandResponse(null);
+        if (ObjectUtils.isEmpty(brandLowestPriceData)) {
+            throw new LowestTotalPriceBrandNotFoundException();
         }
 
         String brandName = brandLowestPriceData.stream().map(BrandLowestPriceInfo::getBrandName).findFirst().get();
@@ -57,6 +60,13 @@ public class AggregationService {
         List<CategoryLowestPriceBrand> lowestPriceBrands = findCategoryLowestPriceBrands(category.getId());
         List<CategoryHighestPriceBrand> highestPriceBrands = findCategoryHighestPriceBrands(category.getId());
 
+        if (ObjectUtils.isEmpty(lowestPriceBrands)) {
+            throw new CategoryLowestPriceBrandNotFoundException();
+        }
+        if(ObjectUtils.isEmpty(highestPriceBrands)) {
+            throw new CategoryHighestPriceBrandNotFoundException();
+        }
+
         List<BrandPriceInfoResponse> lowestPriceBrandResponses = lowestPriceBrands.stream()
             .map(brand -> new BrandPriceInfoResponse(brand.getBrandName(), brand.getPrice()))
             .toList();
@@ -70,6 +80,10 @@ public class AggregationService {
 
     public CategoriesLowestPriceBrandsResponse getCategoriesLowestPriceBrands() {
         List<CategoryLowestPriceBrand> result = findCategoryLowestPriceBrands();
+
+        if (ObjectUtils.isEmpty(result)) {
+            throw new CategoryLowestPriceBrandNotFoundException();
+        }
 
         List<CategoryLowestPriceBrandResponse> lowestPriceBrandResponses = result.stream()
             .collect(groupingBy(CategoryLowestPriceBrand::getCategoryName))
@@ -121,10 +135,15 @@ public class AggregationService {
         if (ObjectUtils.isNotEmpty(brandLowestPriceInfos)) {
             aggregationCacheWriter.saveAggregatedBrandDataInCache(brandLowestPriceInfos);
         }
-        aggregationWriter.deleteAllOriginalData(originalData);
+        aggregationWriter.deleteAllOriginalBrandLowestPriceInfoData(originalData);
 
+        List<CategoryLowestPriceBrand> originalLowestPriceBrands = categoryLowestPriceBrandRepository.findAll();
         aggregateCategoryLowestPriceBrandForAllCategories();
+        categoryLowestPriceBrandRepository.deleteAll(originalLowestPriceBrands);
+
+        List<CategoryHighestPriceBrand> originalHighestPriceBrands = categoryHighestPriceBrandRepository.findAll();
         aggregateCategoryHighestPriceBrandForAllCategories();
+        categoryHighestPriceBrandRepository.deleteAll(originalHighestPriceBrands);
     }
 
     /**
@@ -256,22 +275,22 @@ public class AggregationService {
         List<CategoryLowestPriceBrand> originalLowestPriceBrands = categoryLowestPriceBrandRepository.findAllByCategoryId(itemDto.getCategoryId());
         if (originalLowestPriceBrands.stream().anyMatch(data -> data.getPrice().equals(itemDto.getPrice()))) {
             aggregateCategoryLowestPriceBrandForSingleCategory(itemDto.getCategoryId());
+            aggregationWriter.deleteAllOriginalCategoryLowestPriceBrands(originalLowestPriceBrands);
         }
-        aggregationWriter.deleteAllOriginalCategoryLowestPriceBrands(originalLowestPriceBrands);
 
         List<CategoryHighestPriceBrand> originalHighestPriceBrands = categoryHighestPriceBrandRepository.findAllByCategoryId(itemDto.getCategoryId());
         if (originalHighestPriceBrands.stream().anyMatch(data -> data.getPrice().equals(itemDto.getPrice()))) {
             aggregateCategoryHighestPriceBrandForSingleCategory(itemDto.getCategoryId());
+            aggregationWriter.deleteAllOriginalCategoryHighestPriceBrands(originalHighestPriceBrands);
         }
-        aggregationWriter.deleteAllOriginalCategoryHighestPriceBrands(originalHighestPriceBrands);
 
-        Optional<BrandLowestPriceInfo> brandLowestPriceInfo = brandLowestPriceInfoRepository.findByBrandIdAndCategoryId(itemDto.getBrandId(), itemDto.getCategoryId());
+        Optional<BrandLowestPriceInfo> originalBrandLowestPriceInfo = brandLowestPriceInfoRepository.findByBrandIdAndCategoryId(itemDto.getBrandId(), itemDto.getCategoryId());
         List<BrandLowestPriceInfo> brandLowestPriceInfos = aggregationWriter.aggregateBrandLowestPriceInfoForOneBrandAndOneCategory(itemDto.getBrandId(), itemDto.getCategoryId());
         if (ObjectUtils.isEmpty(brandLowestPriceInfos)) {
             brandLowestPriceInfos = aggregationWriter.aggregateBrandLowestPriceInfoForOneBrandAndAllCategories(itemDto.getBrandId());
         }
         aggregationCacheWriter.saveAggregatedBrandDataInCache(brandLowestPriceInfos);
-        brandLowestPriceInfo.ifPresent(aggregationWriter::deleteOriginalBrandLowestPriceInfo);
+        originalBrandLowestPriceInfo.ifPresent(aggregationWriter::deleteOriginalBrandLowestPriceInfo);
 
 
     }

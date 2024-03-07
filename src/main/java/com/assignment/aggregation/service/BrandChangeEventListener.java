@@ -22,14 +22,11 @@ public class BrandChangeEventListener {
 
     @TransactionalEventListener
     public void handleBrandUpdate(BrandUpdateEvent event) {
-        //카테고리의 최저가, 최고가 정보 업데이트
         aggregationService.aggregateOnBrandUpdate(event.getBrandId());
     }
 
     @TransactionalEventListener
     public void handleBrandDelete(BrandDeleteEvent event) {
-        //해당 브랜드의 카테고리별 데이터 삭제
-        //카테고리의 최저가, 최고가 정보 재집계
         aggregationService.aggregateOnBrandDelete(event.getBrandId());
     }
 }
