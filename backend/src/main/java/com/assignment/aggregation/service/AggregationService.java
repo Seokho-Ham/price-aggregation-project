@@ -97,14 +97,14 @@ public class AggregationService {
 
     @Transactional(propagation = Propagation.REQUIRES_NEW)
     public void aggregateOnBrandCreate(Long brandId) {
-        aggregationWriter.aggregateAllBrandLowestPriceInfoByBrandId(brandId);
+        aggregationWriter.aggregateBrandLowestPriceInfoForOneBrandAndAllCategories(brandId);
     }
 
     @Transactional(propagation = Propagation.REQUIRES_NEW)
     public void aggregateOnBrandUpdate(Long brandId) {
         aggregationWriter.deleteAllBrandLowestPriceInfoByBrandId(brandId);
 
-        List<BrandLowestPriceInfo> brandLowestPriceInfos = aggregationWriter.aggregateAllBrandLowestPriceInfoByBrandId(brandId);
+        List<BrandLowestPriceInfo> brandLowestPriceInfos = aggregationWriter.aggregateBrandLowestPriceInfoForOneBrandAndAllCategories(brandId);
         if (ObjectUtils.isNotEmpty(brandLowestPriceInfos)) {
             aggregationCacheWriter.saveAggregatedBrandDataInCache(brandLowestPriceInfos);
         }
@@ -138,10 +138,9 @@ public class AggregationService {
             return;
         }
 
-        aggregationWriter.saveAllBrandsTotalPriceToDatabase(dtos);
-        List<BrandLowestPriceInfo> brandLowestPriceInfos = aggregationWriter.saveBrandLowestPriceInfosToDatabase(dtos);
-        List<CategoryLowestPriceBrand> categoryLowestPriceBrands = aggregationWriter.aggregateCategoryLowestPriceBrand();
-        List<CategoryHighestPriceBrand> categoryHighestPriceBrands = aggregationWriter.aggregateCategoryHighestPriceBrand();
+        List<BrandLowestPriceInfo> brandLowestPriceInfos = aggregationWriter.aggregateAllBrandLowestPriceInfosToDatabase(dtos);
+        List<CategoryLowestPriceBrand> categoryLowestPriceBrands = aggregationWriter.aggregateCategoryLowestPriceBrandForAllCategories();
+        List<CategoryHighestPriceBrand> categoryHighestPriceBrands = aggregationWriter.aggregateCategoryHighestPriceBrandForAllCategories();
 
         aggregationCacheWriter.saveAggregatedBrandDataInCache(brandLowestPriceInfos);
         aggregationCacheWriter.saveAggregatedCategoryLowestPriceBrandsInCache(categoryLowestPriceBrands);
@@ -185,12 +184,12 @@ public class AggregationService {
             info -> {
                 if (itemDto.getPrice() < info.getPrice()) {
                     aggregationWriter.deleteOneBrandLowestPriceInfoByBrandIdAndCategoryId(itemDto.getBrandId(), itemDto.getCategoryId());
-                    List<BrandLowestPriceInfo> brandLowestPriceInfos = aggregationWriter.aggregateOneBrandLowestPriceInfoByBrandIdAndCategoryId(itemDto.getBrandId(), itemDto.getCategoryId());
+                    List<BrandLowestPriceInfo> brandLowestPriceInfos = aggregationWriter.aggregateBrandLowestPriceInfoForOneBrandAndOneCategory(itemDto.getBrandId(), itemDto.getCategoryId());
                     aggregationCacheWriter.saveAggregatedBrandDataInCache(brandLowestPriceInfos);
                 }
             },
             () -> {
-                List<BrandLowestPriceInfo> brandLowestPriceInfos = aggregationWriter.aggregateOneBrandLowestPriceInfoByBrandIdAndCategoryId(itemDto.getBrandId(), itemDto.getCategoryId());
+                List<BrandLowestPriceInfo> brandLowestPriceInfos = aggregationWriter.aggregateBrandLowestPriceInfoForOneBrandAndOneCategory(itemDto.getBrandId(), itemDto.getCategoryId());
                 aggregationCacheWriter.saveAggregatedBrandDataInCache(brandLowestPriceInfos);
             }
         );
@@ -219,9 +218,9 @@ public class AggregationService {
         aggregateCategoryHighestPriceBrandForSingleCategory(itemDto.getCategoryId());
 
         aggregationWriter.deleteOneBrandLowestPriceInfoByBrandIdAndCategoryId(itemDto.getBrandId(), itemDto.getCategoryId());
-        List<BrandLowestPriceInfo> brandLowestPriceInfos = aggregationWriter.aggregateOneBrandLowestPriceInfoByBrandIdAndCategoryId(itemDto.getBrandId(), itemDto.getCategoryId());
+        List<BrandLowestPriceInfo> brandLowestPriceInfos = aggregationWriter.aggregateBrandLowestPriceInfoForOneBrandAndOneCategory(itemDto.getBrandId(), itemDto.getCategoryId());
         if (ObjectUtils.isEmpty(brandLowestPriceInfos)) {
-            brandLowestPriceInfos = aggregationWriter.aggregateAllBrandLowestPriceInfoByBrandId(itemDto.getBrandId());
+            brandLowestPriceInfos = aggregationWriter.aggregateBrandLowestPriceInfoForOneBrandAndAllCategories(itemDto.getBrandId());
         }
         aggregationCacheWriter.saveAggregatedBrandDataInCache(brandLowestPriceInfos);
 
@@ -264,37 +263,37 @@ public class AggregationService {
         if (brandLowestPriceInfo.isPresent() && itemDto.getPrice().equals(brandLowestPriceInfo.get().getPrice())) {
             aggregationWriter.deleteOneBrandLowestPriceInfoByBrandIdAndCategoryId(itemDto.getBrandId(), itemDto.getCategoryId());
         }
-        List<BrandLowestPriceInfo> brandLowestPriceInfos = aggregationWriter.aggregateOneBrandLowestPriceInfoByBrandIdAndCategoryId(itemDto.getBrandId(), itemDto.getCategoryId());
+        List<BrandLowestPriceInfo> brandLowestPriceInfos = aggregationWriter.aggregateBrandLowestPriceInfoForOneBrandAndOneCategory(itemDto.getBrandId(), itemDto.getCategoryId());
         if (ObjectUtils.isEmpty(brandLowestPriceInfos)) {
-            brandLowestPriceInfos = aggregationWriter.aggregateAllBrandLowestPriceInfoByBrandId(itemDto.getBrandId());
+            brandLowestPriceInfos = aggregationWriter.aggregateBrandLowestPriceInfoForOneBrandAndAllCategories(itemDto.getBrandId());
         }
         aggregationCacheWriter.saveAggregatedBrandDataInCache(brandLowestPriceInfos);
 
     }
 
     private void aggregateCategoryLowestPriceBrandForSingleCategory(Long categoryId) {
-        List<CategoryLowestPriceBrand> entities = aggregationWriter.aggregateCategoryLowestPriceBrandByCategoryId(categoryId);
+        List<CategoryLowestPriceBrand> entities = aggregationWriter.aggregateCategoryLowestPriceBrandForCategory(categoryId);
         if (ObjectUtils.isNotEmpty(entities)) {
             aggregationCacheWriter.saveAggregatedCategoryLowestPriceBrandsInCache(entities);
         }
     }
 
     private void aggregateCategoryLowestPriceBrandForAllCategories() {
-        List<CategoryLowestPriceBrand> categoryLowestPriceBrands = aggregationWriter.aggregateCategoryLowestPriceBrand();
+        List<CategoryLowestPriceBrand> categoryLowestPriceBrands = aggregationWriter.aggregateCategoryLowestPriceBrandForAllCategories();
         if (ObjectUtils.isNotEmpty(categoryLowestPriceBrands)) {
             aggregationCacheWriter.saveAggregatedCategoryLowestPriceBrandsInCache(categoryLowestPriceBrands);
         }
     }
 
     private void aggregateCategoryHighestPriceBrandForSingleCategory(Long categoryId) {
-        List<CategoryHighestPriceBrand> entities = aggregationWriter.aggregateCategoryHighestPriceBrandByCategoryId(categoryId);
+        List<CategoryHighestPriceBrand> entities = aggregationWriter.aggregateCategoryHighestPriceBrandForCategory(categoryId);
         if (ObjectUtils.isNotEmpty(entities)) {
             aggregationCacheWriter.saveAggregatedCategoryHighestPriceBrandsInCache(entities);
         }
     }
 
     private void aggregateCategoryHighestPriceBrandForAllCategories() {
-        List<CategoryHighestPriceBrand> categoryHighestPriceBrands = aggregationWriter.aggregateCategoryHighestPriceBrand();
+        List<CategoryHighestPriceBrand> categoryHighestPriceBrands = aggregationWriter.aggregateCategoryHighestPriceBrandForAllCategories();
         if (ObjectUtils.isNotEmpty(categoryHighestPriceBrands)) {
             aggregationCacheWriter.saveAggregatedCategoryHighestPriceBrandsInCache(categoryHighestPriceBrands);
         }

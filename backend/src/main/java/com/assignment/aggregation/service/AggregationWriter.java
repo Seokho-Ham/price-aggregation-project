@@ -25,10 +25,10 @@ public class AggregationWriter {
     private final CategoryHighestPriceBrandRepository categoryHighestPriceBrandRepository;
 
     /**
-     * 전달받은 id에 해당하는 브랜드의 단일 카테고리의 최저가 정보를 집계하는 로직
+     * 전달받은 brandId와 categoryId에 해당하는 브랜드의 단일 카테고리의 최저가 정보를 집계하는 로직
      */
     @Transactional
-    public List<BrandLowestPriceInfo> aggregateOneBrandLowestPriceInfoByBrandIdAndCategoryId(Long brandId, Long categoryId) {
+    public List<BrandLowestPriceInfo> aggregateBrandLowestPriceInfoForOneBrandAndOneCategory(Long brandId, Long categoryId) {
         Optional<BrandCategoryDto> result = aggregationQueryRepository.findBrandLowestPriceByBrandIdAndCategoryId(brandId, categoryId);
 
         if (result.isEmpty()) {
@@ -42,17 +42,16 @@ public class AggregationWriter {
         List<BrandLowestPriceInfo> entities = dtos.stream()
             .map(data -> new BrandLowestPriceInfo(data.getBrandId(), data.getCategoryId(), data.getBrandName(), data.getCategoryName(), data.getPrice()))
             .toList();
-        saveOneBrandTotalPriceToDatabaseByBrandId(brandId, dtos);
+        aggregateAllBrandsTotalPrice(dtos);
         return entities;
     }
 
     /**
      * 전달받은 brandId에 해당하는 브랜드의 카테고리별 최저가 정보를 집계하는 로직
      *
-     * @return
      */
     @Transactional
-    public List<BrandLowestPriceInfo> aggregateAllBrandLowestPriceInfoByBrandId(Long brandId) {
+    public List<BrandLowestPriceInfo> aggregateBrandLowestPriceInfoForOneBrandAndAllCategories(Long brandId) {
         List<BrandCategoryDto> dtos = aggregationQueryRepository.findBrandLowestPriceByBrandId(brandId);
 
         if (dtos.isEmpty()) {
@@ -60,14 +59,17 @@ public class AggregationWriter {
             return List.of();
         }
 
-        List<BrandLowestPriceInfo> brandLowestPriceInfoEntities = saveBrandLowestPriceInfosToDatabase(dtos);
-        saveOneBrandTotalPriceToDatabaseByBrandId(brandId, dtos);
+        List<BrandLowestPriceInfo> brandLowestPriceInfoEntities = aggregateAllBrandLowestPriceInfosToDatabase(dtos);
+        aggregateAllBrandsTotalPrice(dtos);
         return brandLowestPriceInfoEntities;
     }
 
-
+    /**
+     * 단일 카테고리의 최저가 브랜드 정보를 집계하는 로직
+     *
+     */
     @Transactional
-    public List<CategoryLowestPriceBrand> aggregateCategoryLowestPriceBrandByCategoryId(Long categoryId) {
+    public List<CategoryLowestPriceBrand> aggregateCategoryLowestPriceBrandForCategory(Long categoryId) {
         List<CategoryPriceBrandDto> dtos = aggregationQueryRepository.getCategoryLowestPriceBrandDtosByCategoryId(categoryId);
 
         if (dtos.isEmpty()) {
@@ -82,13 +84,11 @@ public class AggregationWriter {
      * 전체 카테고리에 대해 최저가 상품을 가진 브랜드와 가격 정보를 집계하는 로직
      * <p>
      * 1. 카테고리별로 각 브랜드가 가진 최저가 정보를 조회한다.
-     * 2. 각 카테고리별로 최저가를 가진 브랜드를 필터링하여 집계 데이터로 변환 후 repository에 저장.
-     * 3. 집계한 정보를 redisCache에 저장한다.
+     * 2. 각 카테고리별로 최저가를 가진 브랜드를 필터링하여 집계 데이터로 변환 후 repository에 저장한다.
      *
-     * @return
      */
     @Transactional
-    public List<CategoryLowestPriceBrand> aggregateCategoryLowestPriceBrand() {
+    public List<CategoryLowestPriceBrand> aggregateCategoryLowestPriceBrandForAllCategories() {
         List<CategoryPriceBrandDto> dtos = aggregationQueryRepository.findAllCategoryLowestPriceBrandDtos();
 
         if (dtos.isEmpty()) {
@@ -107,7 +107,7 @@ public class AggregationWriter {
      *
      */
     @Transactional
-    public List<CategoryHighestPriceBrand> aggregateCategoryHighestPriceBrandByCategoryId(Long categoryId) {
+    public List<CategoryHighestPriceBrand> aggregateCategoryHighestPriceBrandForCategory(Long categoryId) {
         List<CategoryPriceBrandDto> dtos = aggregationQueryRepository.findCategoryHighestPriceBrandDtosByCategoryId(categoryId);
 
         if (dtos.isEmpty()) {
@@ -127,7 +127,7 @@ public class AggregationWriter {
      * @return
      */
     @Transactional
-    public List<CategoryHighestPriceBrand> aggregateCategoryHighestPriceBrand() {
+    public List<CategoryHighestPriceBrand> aggregateCategoryHighestPriceBrandForAllCategories() {
         List<CategoryPriceBrandDto> dtos = aggregationQueryRepository.findAllCategoryHighestPriceBrandDtos();
 
         if (dtos.isEmpty()) {
@@ -174,23 +174,16 @@ public class AggregationWriter {
     }
 
     @Transactional
-    public List<BrandLowestPriceInfo> saveBrandLowestPriceInfosToDatabase(List<BrandCategoryDto> dtos) {
+    public List<BrandLowestPriceInfo> aggregateAllBrandLowestPriceInfosToDatabase(List<BrandCategoryDto> dtos) {
         List<BrandLowestPriceInfo> brandLowestPriceInfoEntities = dtos.stream()
             .map(dto -> new BrandLowestPriceInfo(dto.getBrandId(), dto.getCategoryId(), dto.getBrandName(), dto.getCategoryName(), dto.getPrice()))
             .toList();
         brandLowestPriceInfoRepository.saveAll(brandLowestPriceInfoEntities);
+        aggregateAllBrandsTotalPrice(dtos);
         return brandLowestPriceInfoEntities;
     }
 
-    private void saveOneBrandTotalPriceToDatabaseByBrandId(Long brandId, List<BrandCategoryDto> dtos) {
-        double totalPrice = dtos.stream()
-            .mapToDouble(BrandCategoryDto::getPrice)
-            .sum();
-
-        brandTotalPriceRepository.save(new BrandTotalPrice(brandId, totalPrice));
-    }
-
-    public List<BrandTotalPrice> saveAllBrandsTotalPriceToDatabase(List<BrandCategoryDto> dtos) {
+    private void aggregateAllBrandsTotalPrice(List<BrandCategoryDto> dtos) {
         List<BrandTotalPrice> entities = dtos.stream()
             .collect(groupingBy(BrandCategoryDto::getBrandId))
             .entrySet()
@@ -205,7 +198,7 @@ public class AggregationWriter {
             })
             .toList();
 
-        return brandTotalPriceRepository.saveAll(entities);
+        brandTotalPriceRepository.saveAll(entities);
     }
 
     private List<CategoryHighestPriceBrand> saveCategoryHighestPriceBrandInDatabase(List<CategoryPriceBrandDto> dtos) {

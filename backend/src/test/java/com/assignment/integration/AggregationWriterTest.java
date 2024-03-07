@@ -10,8 +10,11 @@ import com.assignment.item.domain.Item;
 import com.assignment.item.domain.ItemRepository;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
+
+import java.util.List;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertAll;
@@ -51,67 +54,181 @@ class AggregationWriterTest extends IntegrationTest{
         highestPriceBrandRepository.deleteAll();
     }
 
-    @DisplayName("특정 브랜드의 카테고리별 최저가 가격 정보를 집계하여 저장한다.")
-    @Test
-    void aggregate_brand_category_lowest_price_success() {
-        Category category = categoryRepository.save(new Category("카테고리1"));
-        Brand brand = brandRepository.save(new Brand("브랜드1"));
-        Item lowerPriceItem = itemRepository.save(new Item("아이템1", 10000D, brand.getId(), category.getId()));
-        Item higherPriceItem = itemRepository.save(new Item("아이템2", 20000D, brand.getId(), category.getId()));
+    @Nested
+    @DisplayName("브랜드의 카테고리 최저가 정보를 집계할 때")
+    class LowestPriceBrandTest {
 
-        aggregationWriter.aggregateAllBrandLowestPriceInfoByBrandId(brand.getId());
+        @DisplayName("특정 브랜드의 전체 카테고리 최저가 정보를 집계한다.")
+        @Test
+        void aggregate_brand_all_category_lowest_price_success() {
+            Category category1 = categoryRepository.save(new Category("상의"));
+            Category category2 = categoryRepository.save(new Category("하의"));
+            Brand brand = brandRepository.save(new Brand("브랜드1"));
+            itemRepository.save(new Item("상의1", 10000D, brand.getId(), category1.getId()));
+            itemRepository.save(new Item("상의2", 20000D, brand.getId(), category1.getId()));
+            itemRepository.save(new Item("하의3", 10000D, brand.getId(), category2.getId()));
+            itemRepository.save(new Item("하의4", 20000D, brand.getId(), category2.getId()));
 
-        BrandLowestPriceInfo result = brandLowestPriceInfoRepository.findByBrandIdAndCategoryId(brand.getId(), category.getId()).get();
+            List<BrandLowestPriceInfo> entities = aggregationWriter.aggregateBrandLowestPriceInfoForOneBrandAndAllCategories(brand.getId());
 
-        assertAll(() -> {
-            assertThat(result.getBrandName()).isEqualTo(brand.getName());
-            assertThat(result.getCategoryName()).isEqualTo(category.getName());
-            assertThat(result.getPrice()).isEqualTo(lowerPriceItem.getPrice());
-        });
+            List<BrandLowestPriceInfo> result = brandLowestPriceInfoRepository.findAllByBrandIdOrderById(brand.getId());
+
+            assertAll(() -> {
+                assertThat(result).hasSize(2);
+                assertThat(result).containsAll(entities);
+            });
+        }
+
+        @DisplayName("특정 브랜드의 단일 카테고리의 최저가 정보를 집계한다.")
+        @Test
+        void aggregate_brand_single_category_lowest_price_success() {
+            Category category = categoryRepository.save(new Category("상의"));
+            Brand brand = brandRepository.save(new Brand("브랜드1"));
+            Item item1 = itemRepository.save(new Item("상의1", 10000D, brand.getId(), category.getId()));
+            Item item2 = itemRepository.save(new Item("상의2", 20000D, brand.getId(), category.getId()));
+
+            aggregationWriter.aggregateBrandLowestPriceInfoForOneBrandAndOneCategory(brand.getId(), category.getId());
+
+            BrandLowestPriceInfo result = brandLowestPriceInfoRepository.findAllByBrandIdOrderById(brand.getId()).get(0);
+
+            assertAll(() -> {
+                assertThat(result.getCategoryName()).isEqualTo(category.getName());
+                assertThat(result.getBrandName()).isEqualTo(brand.getName());
+                assertThat(result.getPrice()).isEqualTo(item1.getPrice());
+            });
+        }
+
+        @DisplayName("상품정보가 없을 경우 빈배열을 반환한다.")
+        @Test
+        void aggregate_brand_category_lowest_price_fail() {
+            Brand brand = brandRepository.save(new Brand("브랜드1"));
+
+            List<BrandLowestPriceInfo> result = aggregationWriter.aggregateBrandLowestPriceInfoForOneBrandAndAllCategories(brand.getId());
+
+            assertThat(result).isEmpty();
+        }
     }
 
-    @DisplayName("카테고리별로 최저가 브랜드의 정보를 집계한다.")
-    @Test
-    void aggregate_category_lowest_price_brand_success() {
-        Category category = categoryRepository.save(new Category("상의"));
-        Brand brand1 = brandRepository.save(new Brand("브랜드1"));
-        Brand brand2 = brandRepository.save(new Brand("브랜드2"));
-        Item lowerPriceItem = itemRepository.save(new Item("상의1", 10000D, brand1.getId(), category.getId()));
-        Item higherPriceItem = itemRepository.save(new Item("상의2", 20000D, brand2.getId(), category.getId()));
+    @Nested
+    @DisplayName("카테고리의 최저가 브랜드 정보를 집계할 때")
+    class CategoryLowestPriceBrandTest {
+        @DisplayName("전체 카테고리를 대상으로 정보를 집계한다.")
+        @Test
+        void aggregate_all_category_lowest_price_brand_success() {
+            Category category1 = categoryRepository.save(new Category("상의"));
+            Category category2 = categoryRepository.save(new Category("하의"));
+            Brand brand1 = brandRepository.save(new Brand("브랜드1"));
+            Brand brand2 = brandRepository.save(new Brand("브랜드2"));
+            Item lowerPriceItem1 = itemRepository.save(new Item("상의1", 10000D, brand1.getId(), category1.getId()));
+            Item higherPriceItem1 = itemRepository.save(new Item("상의2", 20000D, brand2.getId(), category1.getId()));
+            Item lowerPriceItem2 = itemRepository.save(new Item("하의1", 10000D, brand1.getId(), category2.getId()));
+            Item higherPriceItem2 = itemRepository.save(new Item("하의2", 20000D, brand2.getId(), category2.getId()));
 
-        aggregationWriter.aggregateCategoryLowestPriceBrand();
+            List<CategoryLowestPriceBrand> categoryLowestPriceBrands = aggregationWriter.aggregateCategoryLowestPriceBrandForAllCategories();
 
-        CategoryLowestPriceBrand categoryLowestPriceBrand = lowestPriceBrandRepository.findAllByCategoryId(category.getId()).get(0);
+            List<CategoryLowestPriceBrand> result = lowestPriceBrandRepository.findAll();
 
-        assertAll(() -> {
-            assertThat(categoryLowestPriceBrand.getCategoryId()).isEqualTo(category.getId());
-            assertThat(categoryLowestPriceBrand.getBrandId()).isEqualTo(brand1.getId());
-            assertThat(categoryLowestPriceBrand.getPrice()).isEqualTo(lowerPriceItem.getPrice());
-        });
+            assertAll(() -> {
+                assertThat(result).hasSize(2);
+                assertThat(result).containsAll(categoryLowestPriceBrands);
+            });
+        }
+
+        @DisplayName("단일 카테고리를 대상으로 정보를 집계한다.")
+        @Test
+        void aggregate_single_category_lowest_price_brand_success() {
+            Category category = categoryRepository.save(new Category("상의"));
+            Brand brand1 = brandRepository.save(new Brand("브랜드1"));
+            Brand brand2 = brandRepository.save(new Brand("브랜드2"));
+            Item lowerPriceItem = itemRepository.save(new Item("상의1", 10000D, brand1.getId(), category.getId()));
+            Item higherPriceItem = itemRepository.save(new Item("상의2", 20000D, brand2.getId(), category.getId()));
+
+            aggregationWriter.aggregateCategoryLowestPriceBrandForCategory(category.getId());
+
+            CategoryLowestPriceBrand result = lowestPriceBrandRepository.findAllByCategoryId(category.getId()).get(0);
+
+            assertAll(() -> {
+                assertThat(result.getCategoryId()).isEqualTo(category.getId());
+                assertThat(result.getBrandId()).isEqualTo(brand1.getId());
+                assertThat(result.getPrice()).isEqualTo(lowerPriceItem.getPrice());
+            });
+
+        }
+
+        @DisplayName("상품정보가 없을 경우 빈배열을 반환한다.")
+        @Test
+        void aggregate_category_lowest_price_brand_fail() {
+            categoryRepository.save(new Category("상의"));
+            brandRepository.save(new Brand("브랜드1"));
+
+            List<CategoryLowestPriceBrand> result = aggregationWriter.aggregateCategoryLowestPriceBrandForAllCategories();
+
+            assertThat(result).isEmpty();
+        }
+
 
     }
 
-    @DisplayName("카테고리별로 최고가 브랜드의 정보를 집계한다.")
-    @Test
-    void aggregate_category_highest_price_brand_success() {
-        Category category = categoryRepository.save(new Category("상의"));
-        Brand brand1 = brandRepository.save(new Brand("브랜드1"));
-        Brand brand2 = brandRepository.save(new Brand("브랜드2"));
-        Item lowerPriceItem = itemRepository.save(new Item("상의1", 10000D, brand1.getId(), category.getId()));
-        Item higherPriceItem = itemRepository.save(new Item("상의2", 20000D, brand2.getId(), category.getId()));
+    @Nested
+    @DisplayName("카테고리의 최고가 브랜드 정보를 집계할 때")
+    class CategoryHighestPriceBrandTest {
+        @DisplayName("전체 카테고리를 대상으로 정보를 집계한다.")
+        @Test
+        void aggregate_all_category_highest_price_brand_success() {
+            Category category1 = categoryRepository.save(new Category("상의"));
+            Category category2 = categoryRepository.save(new Category("하의"));
+            Brand brand1 = brandRepository.save(new Brand("브랜드1"));
+            Brand brand2 = brandRepository.save(new Brand("브랜드2"));
+            Item lowerPriceItem1 = itemRepository.save(new Item("상의1", 10000D, brand1.getId(), category1.getId()));
+            Item higherPriceItem1 = itemRepository.save(new Item("상의2", 20000D, brand2.getId(), category1.getId()));
+            Item lowerPriceItem2 = itemRepository.save(new Item("하의1", 10000D, brand1.getId(), category2.getId()));
+            Item higherPriceItem2 = itemRepository.save(new Item("하의2", 20000D, brand2.getId(), category2.getId()));
 
-        aggregationWriter.aggregateCategoryHighestPriceBrand();
+            List<CategoryHighestPriceBrand> entities = aggregationWriter.aggregateCategoryHighestPriceBrandForAllCategories();
 
-        CategoryHighestPriceBrand categoryHighestPriceBrand = highestPriceBrandRepository.findAllByCategoryId(category.getId()).get(0);
+            List<CategoryHighestPriceBrand> result = highestPriceBrandRepository.findAll();
 
-        assertAll(() -> {
-            assertThat(categoryHighestPriceBrand.getCategoryId()).isEqualTo(category.getId());
-            assertThat(categoryHighestPriceBrand.getBrandId()).isEqualTo(brand2.getId());
-            assertThat(categoryHighestPriceBrand.getPrice()).isEqualTo(higherPriceItem.getPrice());
+            assertAll(() -> {
+                assertThat(result).hasSize(2);
+                assertThat(result).containsAll(entities);
+            });
+        }
 
-        });
+        @DisplayName("단일 카테고리를 대상으로 정보를 집계한다.")
+        @Test
+        void aggregate_single_category_highest_price_brand_success() {
+            Category category = categoryRepository.save(new Category("상의"));
+            Brand brand1 = brandRepository.save(new Brand("브랜드1"));
+            Brand brand2 = brandRepository.save(new Brand("브랜드2"));
+            Item lowerPriceItem = itemRepository.save(new Item("상의1", 10000D, brand1.getId(), category.getId()));
+            Item higherPriceItem = itemRepository.save(new Item("상의2", 20000D, brand2.getId(), category.getId()));
 
+            aggregationWriter.aggregateCategoryHighestPriceBrandForCategory(category.getId());
+
+            CategoryHighestPriceBrand result = highestPriceBrandRepository.findAllByCategoryId(category.getId()).get(0);
+
+            assertAll(() -> {
+                assertThat(result.getCategoryId()).isEqualTo(category.getId());
+                assertThat(result.getBrandId()).isEqualTo(brand2.getId());
+                assertThat(result.getPrice()).isEqualTo(higherPriceItem.getPrice());
+
+            });
+        }
+
+        @DisplayName("상품정보가 없을 경우 빈배열을 반환한다.")
+        @Test
+        void aggregate_category_highest_price_brand_fail() {
+            categoryRepository.save(new Category("상의"));
+            brandRepository.save(new Brand("브랜드1"));
+
+            List<CategoryHighestPriceBrand> result = aggregationWriter.aggregateCategoryHighestPriceBrandForAllCategories();
+
+            assertThat(result).isEmpty();
+        }
     }
+
+
+
 
 
 }
