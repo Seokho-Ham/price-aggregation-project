@@ -1,5 +1,6 @@
 package com.assignment;
 
+import com.assignment.aggregation.service.AggregationService;
 import com.assignment.brand.domain.Brand;
 import com.assignment.brand.domain.BrandRepository;
 import com.assignment.category.domain.Category;
@@ -9,10 +10,12 @@ import com.assignment.item.domain.ItemRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.boot.CommandLineRunner;
 import org.springframework.context.annotation.Profile;
+import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.stereotype.Component;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Objects;
 
 @Profile("local")
 @RequiredArgsConstructor
@@ -22,12 +25,20 @@ public class DataInitCommandLineRunner implements CommandLineRunner {
     private final CategoryRepository categoryRepository;
     private final BrandRepository brandRepository;
     private final ItemRepository itemRepository;
+    private final RedisTemplate<String, Object> redisTemplate;
+    private final AggregationService aggregationService;
 
     @Override
     public void run(String... args) throws Exception {
+        //바이너리로 embedded redis 서버를 실행하는 과정에서 이전 데이터 기록을 그대로 가지고 있는 경우를 방지하기 위해 최소 실행 시 flushAll 호출
+        Objects.requireNonNull(redisTemplate.getConnectionFactory()).getConnection().serverCommands().flushAll();
+
         initCategoryData();
         initBrandData();
         initItemData();
+
+        //최초 집계 데이터 생성
+        aggregationService.aggregateAllDatas();
     }
 
     private void initCategoryData() {
