@@ -1,0 +1,64 @@
+# 해당 테스트는 애플리케이션을 실행 시 저장되는 기본 데이터를 바탕으로 진행됩니다.
+# 데이터가 변경될 시 정상적으로 통과가 되지 않을 수 있습니다.
+
+### 1.상품 생성
+POST http://localhost:8080/items
+Content-Type: application/json
+
+{
+  "itemName": "새 상품",
+  "price": 10000,
+  "brandId": 1,
+  "categoryId": 1
+}
+
+> {%
+    client.test("응답 상태코드가 201이어야 한다.", function (){
+        client.assert(response.status === 201, "응답 상태코드가 일치하지 않습니다.")
+    });
+
+    client.test("Check data", function (){
+        var jsonData = response.body
+        client.assert(jsonData.code === "SUCCESS-001")
+        client.assert(jsonData.message === "요청 성공")
+    });
+%}
+
+
+### 상품 수정 - 1번 상품의 정보 변경
+PUT http://localhost:8080/items/1
+Content-Type: application/json
+
+{
+  "itemName": "상품1의 새로운 이름",
+  "price": 25000
+}
+
+> {%
+    client.test("응답 상태코드가 200이어야 한다.", function (){
+        client.assert(response.status === 200, "응답 상태코드가 일치하지 않습니다.")
+    });
+
+    client.test("Check data", function (){
+        var jsonData = response.body
+        client.assert(jsonData.code === "SUCCESS-001")
+        client.assert(jsonData.message === "요청 성공")
+    });
+%}
+
+### 상품 삭제 - 1번 상품 삭제
+DELETE http://localhost:8080/items/1
+
+> {%
+    client.test("응답 상태코드가 200이어야 한다.", function (){
+        client.assert(response.status === 200, "응답 상태코드가 일치하지 않습니다.")
+    });
+
+    client.test("Check data", function (){
+        var jsonData = response.body
+        client.assert(jsonData.code === "SUCCESS-001")
+        client.assert(jsonData.message === "요청 성공")
+    });
+%}
+
+

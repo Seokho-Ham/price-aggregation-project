@@ -1,0 +1,175 @@
+# 해당 테스트는 애플리케이션을 실행 시 저장되는 기본 데이터를 바탕으로 진행됩니다.
+# 데이터가 변경될 시 정상적으로 통과가 되지 않을 수 있습니다.
+
+# [전체 시나리오]
+# 1. D브랜드에 상품 추가 - 상의 카테고리 최저가 상품
+# 2. 요구사항 1번 API 호출 - 카테고리 별 최저가격 브랜드와 상품 가격, 총액을 조회하는 API
+# 3. 요구사항 2번 API 호출 - 단일 브랜드로 모든 카테고리 상품을 구매할 때 최저가격에 판매하는 브랜드와 카테고리의 상품가격, 총액을 조회하는 API
+# 4. 요구사항 3번 API 호출 - 카테고리 이름으로 최저, 최고 가격 브랜드와 상품 가격을 조회하는 API
+# 5. 1번에서 생성한 상품 삭제
+# 6. 요구사항 1,3번 API 호출
+# 7. D 브랜드 삭제
+# 8. 요구사항 2번 API 호출
+
+### 1. 상품 추가 - D 브랜드에 상의 카테고리 최저가 상품 추가
+POST http://localhost:8080/items
+Content-Type: application/json
+
+{
+  "itemName": "최저가 상품",
+  "price": 100,
+  "brandId": 4,
+  "categoryId": 1
+}
+
+> {%
+    client.test("응답 상태코드가 201이어야 한다.", function (){
+        client.assert(response.status === 201, "응답 상태코드가 일치하지 않습니다.")
+    });
+
+    client.test("Check data", function (){
+        var jsonData = response.body
+        client.assert(jsonData.code === "SUCCESS-001")
+        client.assert(jsonData.message === "요청 성공")
+    });
+%}
+
+### 2. 요구사항 1번 API 호출 - 카테고리 별 최저가격 브랜드와 상품 가격, 총액을 조회하는 API
+GET http://localhost:8080/aggregations/categories/lowest-price-brands
+
+> {%
+    client.test("응답 상태코드가 200이어야 한다.", function (){
+        client.assert(response.status === 200, "응답 상태코드가 일치하지 않습니다.")
+    });
+
+    client.test("Check data", function (){
+        var jsonData = response.body
+        client.assert(jsonData.code === "SUCCESS-001")
+        client.assert(jsonData.message === "요청 성공")
+        client.assert(jsonData.data.totalPrice === 24200)
+    });
+%}
+
+### 3. 요구사항 2번 API 호출 - 단일 브랜드로 모든 카테고리 상품을 구매할 때 최저가격에 판매하는 브랜드와 카테고리의 상품가격, 총액을 조회하는 API
+GET http://localhost:8080/aggregations/brands/lowest-total-price
+
+> {%
+    client.test("응답 상태코드가 200이어야 한다.", function (){
+        client.assert(response.status === 200, "응답 상태코드가 일치하지 않습니다.")
+    });
+
+    client.test("Check data", function (){
+        var jsonData = response.body
+        client.assert(jsonData.code === "SUCCESS-001")
+        client.assert(jsonData.message === "요청 성공")
+        client.assert(jsonData.data.최저가.브랜드 === "D")
+        client.assert(jsonData.data.최저가.카테고리.length === 8)
+        client.assert(jsonData.data.최저가.카테고리[0].카테고리 === "상의")
+        client.assert(jsonData.data.최저가.카테고리[0].가격 === 100)
+    });
+%}
+
+### 4. 요구사항 3번 API 호출 - 카테고리 이름으로 최저, 최고 가격 브랜드와 상품 가격을 조회하는 API
+GET http://localhost:8080/aggregations/categories/lowest-highest-price-brand?categoryName=상의
+
+> {%
+    client.test("응답 상태코드가 200이어야 한다.", function (){
+        client.assert(response.status === 200, "응답 상태코드가 일치하지 않습니다.")
+    });
+
+    client.test("Check data", function (){
+        var jsonData = response.body
+        client.assert(jsonData.code === "SUCCESS-001")
+        client.assert(jsonData.message === "요청 성공")
+        client.assert(jsonData.data.카테고리 === "상의")
+        client.assert(jsonData.data.최저가[0].브랜드 === "D")
+        client.assert(jsonData.data.최저가[0].가격 === 100)
+        client.assert(jsonData.data.최고가[0].브랜드 === "I")
+        client.assert(jsonData.data.최고가[0].가격 === 11400)
+    });
+%}
+
+### 5. 1번에서 생성한 상품 삭제 - 73번 상품
+DELETE http://localhost:8080/items/73
+
+> {%
+    client.test("응답 상태코드가 200이어야 한다.", function (){
+        client.assert(response.status === 200, "응답 상태코드가 일치하지 않습니다.")
+    });
+
+    client.test("Check data", function (){
+        var jsonData = response.body
+        client.assert(jsonData.code === "SUCCESS-001")
+        client.assert(jsonData.message === "요청 성공")
+    });
+%}
+
+### 6. 요구사항 1번 API 재호출 및 가격 검증
+GET http://localhost:8080/aggregations/categories/lowest-price-brands
+
+> {%
+    client.test("응답 상태코드가 200이어야 한다.", function (){
+        client.assert(response.status === 200, "응답 상태코드가 일치하지 않습니다.")
+    });
+
+    client.test("Check data", function (){
+        var jsonData = response.body
+        client.assert(jsonData.code === "SUCCESS-001")
+        client.assert(jsonData.message === "요청 성공")
+        client.assert(jsonData.data.totalPrice === 34100)
+    });
+%}
+
+### 7. 요구사항 3번 API 재호출 및 가격 검증
+GET http://localhost:8080/aggregations/categories/lowest-highest-price-brand?categoryName=상의
+
+> {%
+    client.test("응답 상태코드가 200이어야 한다.", function (){
+        client.assert(response.status === 200, "응답 상태코드가 일치하지 않습니다.")
+    });
+
+    client.test("Check data", function (){
+        var jsonData = response.body
+        client.assert(jsonData.code === "SUCCESS-001")
+        client.assert(jsonData.message === "요청 성공")
+        client.assert(jsonData.data.카테고리 === "상의")
+        client.assert(jsonData.data.최저가[0].브랜드 === "C")
+        client.assert(jsonData.data.최저가[0].가격 === 10000)
+        client.assert(jsonData.data.최고가[0].브랜드 === "I")
+        client.assert(jsonData.data.최고가[0].가격 === 11400)
+    });
+%}
+
+### 8. D 브랜드 삭제
+DELETE http://localhost:8080/brands/4
+
+> {%
+    client.test("응답 상태코드가 200이어야 한다.", function (){
+        client.assert(response.status === 200, "응답 상태코드가 일치하지 않습니다.")
+    });
+
+    client.test("Check data", function (){
+        var jsonData = response.body
+        client.assert(jsonData.code === "SUCCESS-001")
+        client.assert(jsonData.message === "요청 성공")
+    });
+%}
+
+### 9. 요구사항 2번 API 재호출 및 가격 검증
+GET http://localhost:8080/aggregations/brands/lowest-total-price
+
+> {%
+    client.test("응답 상태코드가 200이어야 한다.", function (){
+        client.assert(response.status === 200, "응답 상태코드가 일치하지 않습니다.")
+    });
+
+    client.test("Check data", function (){
+        var jsonData = response.body
+        client.assert(jsonData.code === "SUCCESS-001")
+        client.assert(jsonData.message === "요청 성공")
+        client.assert(jsonData.data.최저가.브랜드 === "C")
+        client.assert(jsonData.data.최저가.카테고리.length === 8)
+        client.assert(jsonData.data.최저가.카테고리[0].카테고리 === "상의")
+        client.assert(jsonData.data.최저가.카테고리[0].가격 === 10000)
+    });
+%}
