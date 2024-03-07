@@ -1,5 +1,6 @@
 package com.assignment.item.service;
 
+import com.assignment.item.service.dto.ItemDto;
 import com.assignment.item.service.dto.ItemUpdateDto;
 import com.assignment.item.service.dto.ItemCreateDto;
 import lombok.RequiredArgsConstructor;
@@ -15,20 +16,20 @@ public class ItemService {
 
     @Transactional
     public void create(ItemCreateDto requestDto) {
-        Long itemId = itemWriter.create(requestDto);
-        itemEventProducer.produceItemCreateEvent(itemId);
+        ItemDto dto = itemWriter.create(requestDto);
+        itemEventProducer.produceItemCreateEvent(dto);
     }
 
     @Transactional
     public void update(ItemUpdateDto requestDto) {
-        Long itemId = itemWriter.update(requestDto);
-        itemEventProducer.produceItemUpdateEvent(itemId);
+        ItemDto dto = itemWriter.update(requestDto);
+        itemEventProducer.produceItemUpdateEvent(dto);
     }
 
     @Transactional
     public void delete(Long itemId) {
-        Long deletedItemId = itemWriter.delete(itemId);
-        itemEventProducer.produceItemDeleteEvent(deletedItemId);
+        ItemDto dto = itemWriter.delete(itemId);
+        itemEventProducer.produceItemDeleteEvent(dto);
     }
 
 }

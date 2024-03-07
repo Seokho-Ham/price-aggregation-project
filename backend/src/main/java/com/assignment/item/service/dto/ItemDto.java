@@ -5,7 +5,10 @@ import lombok.RequiredArgsConstructor;
 
 @Getter
 @RequiredArgsConstructor
-public class ItemUpdateEvent {
+public class ItemDto {
 
-    private final ItemDto itemDto;
+    private final Long brandId;
+    private final Long categoryId;
+    private final Double price;
+
 }

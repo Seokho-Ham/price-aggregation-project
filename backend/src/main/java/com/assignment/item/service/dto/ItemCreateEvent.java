@@ -7,5 +7,5 @@ import lombok.RequiredArgsConstructor;
 @RequiredArgsConstructor
 public class ItemCreateEvent {
 
-    private final Long itemId;
+    private final ItemDto itemDto;
 }

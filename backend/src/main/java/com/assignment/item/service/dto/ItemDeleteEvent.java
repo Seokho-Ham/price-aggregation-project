@@ -7,5 +7,5 @@ import lombok.RequiredArgsConstructor;
 @RequiredArgsConstructor
 public class ItemDeleteEvent {
 
-    private final Long itemId;
+    private final ItemDto itemDto;
 }

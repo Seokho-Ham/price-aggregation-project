@@ -2,6 +2,7 @@ package com.assignment.item.service;
 
 import com.assignment.item.service.dto.ItemCreateEvent;
 import com.assignment.item.service.dto.ItemDeleteEvent;
+import com.assignment.item.service.dto.ItemDto;
 import com.assignment.item.service.dto.ItemUpdateEvent;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -15,15 +16,15 @@ public class ItemEventProducer {
 
     private final ApplicationEventPublisher eventPublisher;
 
-    public void produceItemCreateEvent(Long itemId) {
-        eventPublisher.publishEvent(new ItemCreateEvent(itemId));
+    public void produceItemCreateEvent(ItemDto dto) {
+        eventPublisher.publishEvent(new ItemCreateEvent(dto));
     }
 
-    public void produceItemUpdateEvent(Long itemId) {
-        eventPublisher.publishEvent(new ItemUpdateEvent(itemId));
+    public void produceItemUpdateEvent(ItemDto dto) {
+        eventPublisher.publishEvent(new ItemUpdateEvent(dto));
     }
 
-    public void produceItemDeleteEvent(Long itemId) {
-        eventPublisher.publishEvent(new ItemDeleteEvent(itemId));
+    public void produceItemDeleteEvent(ItemDto dto) {
+        eventPublisher.publishEvent(new ItemDeleteEvent(dto));
     }
 }

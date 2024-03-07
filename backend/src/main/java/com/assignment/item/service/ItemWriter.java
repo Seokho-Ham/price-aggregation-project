@@ -2,6 +2,7 @@ package com.assignment.item.service;
 
 import com.assignment.category.exception.CategoryNotFoundException;
 import com.assignment.item.exception.ItemDuplicateException;
+import com.assignment.item.service.dto.ItemDto;
 import com.assignment.item.service.dto.ItemUpdateDto;
 import com.assignment.brand.domain.BrandRepository;
 import com.assignment.brand.exception.BrandNotFoundException;
@@ -25,28 +26,28 @@ public class ItemWriter {
     private final CategoryRepository categoryRepository;
 
     @Transactional
-    public Long create(ItemCreateDto requestDto) {
+    public ItemDto create(ItemCreateDto requestDto) {
         validateBrandExists(requestDto.getBrandId());
         validateCategoryExists(requestDto.getCategoryId());
         validateItemDuplicate(requestDto.getBrandId(), requestDto.getItemName());
         Item item = itemRepository.save(new Item(requestDto.getItemName(), requestDto.getPrice(), requestDto.getBrandId(), requestDto.getCategoryId()));
-        return item.getId();
+        return new ItemDto(item.getBrandId(), item.getCategoryId(), item.getPrice());
     }
 
     @Transactional
-    public Long update(ItemUpdateDto itemUpdateDto) {
+    public ItemDto update(ItemUpdateDto itemUpdateDto) {
         Item item = itemRepository.findByIdAndDeletedIsFalse(itemUpdateDto.getItemId())
             .orElseThrow(ItemNotFoundException::new);
         item.update(itemUpdateDto.getItemName(), itemUpdateDto.getPrice());
-        return item.getId();
+        return new ItemDto(item.getBrandId(), item.getCategoryId(), item.getPrice());
     }
 
     @Transactional
-    public Long delete(Long itemId) {
+    public ItemDto delete(Long itemId) {
         Item item = itemRepository.findByIdAndDeletedIsFalse(itemId)
             .orElseThrow(ItemNotFoundException::new);
         item.delete();
-        return item.getId();
+        return new ItemDto(item.getBrandId(), item.getCategoryId(), item.getPrice());
     }
 
     private void validateBrandExists(Long brandId) {
