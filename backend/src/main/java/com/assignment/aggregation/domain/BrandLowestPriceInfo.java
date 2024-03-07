@@ -1,7 +1,6 @@
 package com.assignment.aggregation.domain;
 
-import jakarta.persistence.EmbeddedId;
-import jakarta.persistence.Entity;
+import jakarta.persistence.*;
 import lombok.AccessLevel;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
@@ -11,14 +10,18 @@ import lombok.NoArgsConstructor;
 @Entity
 public class BrandLowestPriceInfo {
 
-    @EmbeddedId
-    private BrandLowestPriceInfoPk id;
+    @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    private Long id;
+    private Long brandId;
+    private Long categoryId;
     private String brandName;
     private String categoryName;
     private Double price;
 
     public BrandLowestPriceInfo(Long brandId, Long categoryId, String brandName, String categoryName, double price) {
-        this.id = new BrandLowestPriceInfoPk(brandId, categoryId);
+        this.brandId = brandId;
+        this.categoryId = categoryId;
         this.brandName = brandName;
         this.categoryName = categoryName;
         this.price = price;

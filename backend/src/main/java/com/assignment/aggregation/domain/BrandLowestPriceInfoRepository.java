@@ -1,13 +1,25 @@
 package com.assignment.aggregation.domain;
 
+
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Modifying;
+import org.springframework.data.jpa.repository.Query;
+import org.springframework.data.repository.query.Param;
 
 import java.util.List;
+import java.util.Optional;
 
-public interface BrandLowestPriceInfoRepository extends JpaRepository<BrandLowestPriceInfo, BrandLowestPriceInfoPk> {
+public interface BrandLowestPriceInfoRepository extends JpaRepository<BrandLowestPriceInfo, Long> {
 
-    List<BrandLowestPriceInfo> findAllById_BrandId(Long brandId);
+    Optional<BrandLowestPriceInfo> findByBrandIdAndCategoryId(Long brandId, Long categoryId);
 
-    void deleteAllById_BrandId(Long brandId);
+    List<BrandLowestPriceInfo> findAllByBrandIdOrderById(Long brandId);
 
+    @Modifying
+    @Query("delete from BrandLowestPriceInfo bl where bl.brandId = :brandId")
+    void deleteAllByBrandId(@Param("brandId") Long brandId);
+
+    @Modifying
+    @Query("delete from BrandLowestPriceInfo bl where bl.brandId = :brandId and bl.categoryId = :categoryId")
+    void deleteByBrandIdAndCategoryId(@Param("brandId")Long brandId, @Param("categoryId")Long categoryId);
 }
