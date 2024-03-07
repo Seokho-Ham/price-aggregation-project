@@ -9,7 +9,7 @@ public enum ApplicationErrorCode {
 
     //Common
     INVALID_PARAM("COMMON-001", "올바르지 않은 값을 전달하였습니다."),
-    CACHE_DATA_PARSING_FAIL("COMMON-002", "캐시에서 조회한 데이터를 파싱하는데 실패하였습니다."),
+    OBJECT_PARSING_FAIL("COMMON-002", "데이터를 파싱하는데 실패하였습니다."),
 
     //Brand
     BRAND_NOT_FOUND("BRAND-001", "조건에 맞는 브랜드 정보를 찾지 못했습니다."),

@@ -59,6 +59,26 @@ public class AggregationCacheRepository {
             .add(BRAND_TOTAL_PRICE_INFO_KEY, data);
     }
 
+    public void deleteBrandTotalPriceCacheByBrandId(String brandId) {
+        redisTemplate.opsForZSet()
+            .remove(BRAND_TOTAL_PRICE_INFO_KEY, brandId);
+    }
+
+    public void deleteAllBrandCategoryPriceCacheByBrandId(String brandId) {
+        redisTemplate.opsForHash()
+            .delete(BRAND_PRICE_INFO_KEY, brandId);
+    }
+
+    public void deleteAllCategoryLowestPriceBrandCacheByBrandId(String brandId) {
+        redisTemplate.opsForHash()
+            .delete(CATEGORY_LOWEST_PRICE_KEY, brandId);
+    }
+
+    public void deleteAllCategoryHighestPriceBrandCacheByBrandId(String brandId) {
+        redisTemplate.opsForHash()
+            .delete(CATEGORY_HIGHEST_PRICE_KEY, brandId);
+    }
+
     /**
      * Redis 저장소로부터 총액 최저가에 해당하는 브랜드 데이터를 조회합니다.
      */
@@ -83,5 +103,4 @@ public class AggregationCacheRepository {
             return Optional.empty();
         }
     }
-
 }

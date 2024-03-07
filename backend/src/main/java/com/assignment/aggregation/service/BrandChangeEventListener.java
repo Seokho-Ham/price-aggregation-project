@@ -23,7 +23,7 @@ public class BrandChangeEventListener {
     @TransactionalEventListener
     public void handleBrandUpdate(BrandUpdateEvent event) {
         //카테고리의 최저가, 최고가 정보 업데이트
-        aggregationService.aggregateOnBrandUpdate();
+        aggregationService.aggregateOnBrandUpdate(event.getBrandId());
     }
 
     @TransactionalEventListener

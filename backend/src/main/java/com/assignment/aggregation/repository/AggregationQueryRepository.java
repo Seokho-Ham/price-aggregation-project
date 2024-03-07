@@ -11,6 +11,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Repository;
 
 import java.util.List;
+import java.util.Optional;
 
 import static com.assignment.aggregation.domain.QBrandTotalPrice.brandTotalPrice;
 import static com.assignment.brand.domain.QBrand.brand;
@@ -36,7 +37,7 @@ public class AggregationQueryRepository {
             .fetch();
     }
 
-    public List<BrandCategoryDto> findByBrandLowestPriceByCategoryId(Long brandId) {
+    public List<BrandCategoryDto> findBrandLowestPriceByBrandId(Long brandId) {
         return jpaQueryFactory.select(new QBrandCategoryDto(brand.id, brand.name, category.id, category.name, item.price.min()))
             .from(item)
             .join(brand).on(brand.id.eq(item.brandId))
@@ -50,7 +51,37 @@ public class AggregationQueryRepository {
             .fetch();
     }
 
-    public List<CategoryPriceBrandDto> getCategoryLowestPriceBrandDtos() {
+    public Optional<BrandCategoryDto> findBrandLowestPriceByBrandIdAndCategoryId(Long brandId, Long categoryId) {
+        return Optional.ofNullable(jpaQueryFactory.select(new QBrandCategoryDto(brand.id, brand.name, category.id, category.name, item.price.min()))
+            .from(item)
+            .join(brand).on(brand.id.eq(item.brandId))
+            .join(category).on(category.id.eq(item.categoryId))
+            .where(
+                eqBrandId(brandId),
+                eqCategoryId(categoryId),
+                brandIsNotDeleted(),
+                itemIsNotDeleted()
+            )
+            .groupBy(category.id, brand.id)
+            .fetchOne());
+    }
+
+    public List<CategoryPriceBrandDto> getCategoryLowestPriceBrandDtosByCategoryId(Long categoryId) {
+        return jpaQueryFactory
+            .select(new QCategoryPriceBrandDto(category.id, category.name, brand.id, brand.name, item.price.min()))
+            .from(item)
+            .join(brand).on(item.brandId.eq(brand.id))
+            .join(category).on(category.id.eq(item.categoryId))
+            .where(
+                eqCategoryId(categoryId),
+                brandIsNotDeleted(),
+                itemIsNotDeleted()
+            )
+            .groupBy(item.categoryId, brand.id)
+            .fetch();
+    }
+
+    public List<CategoryPriceBrandDto> findAllCategoryLowestPriceBrandDtos() {
         return jpaQueryFactory
             .select(new QCategoryPriceBrandDto(category.id, category.name, brand.id, brand.name, item.price.min()))
             .from(item)
@@ -64,7 +95,22 @@ public class AggregationQueryRepository {
             .fetch();
     }
 
-    public List<CategoryPriceBrandDto> getCategoryHighestPriceBrandDtos() {
+    public List<CategoryPriceBrandDto> findCategoryHighestPriceBrandDtosByCategoryId(Long categoryId) {
+        return jpaQueryFactory
+            .select(new QCategoryPriceBrandDto(category.id, category.name, brand.id, brand.name, item.price.max()))
+            .from(item)
+            .join(brand).on(item.brandId.eq(brand.id))
+            .join(category).on(category.id.eq(item.categoryId))
+            .where(
+                eqCategoryId(categoryId),
+                brandIsNotDeleted(),
+                itemIsNotDeleted()
+            )
+            .groupBy(item.categoryId, brand.id)
+            .fetch();
+    }
+
+    public List<CategoryPriceBrandDto> findAllCategoryHighestPriceBrandDtos() {
         return jpaQueryFactory
             .select(new QCategoryPriceBrandDto(category.id, category.name, brand.id, brand.name, item.price.max()))
             .from(item)
@@ -81,13 +127,16 @@ public class AggregationQueryRepository {
     public BrandTotalPrice getLowestTotalPriceBrand() {
         return jpaQueryFactory.select(brandTotalPrice)
             .from(brandTotalPrice)
-            .where(brandTotalPrice.price.eq(brandTotalPrice.price.min()))
-            .groupBy(brandTotalPrice.brandId)
+            .orderBy(brandTotalPrice.price.asc())
             .fetchFirst();
     }
 
     private BooleanExpression eqBrandId(Long brandId) {
         return brand.id.eq(brandId);
+    }
+
+    private BooleanExpression eqCategoryId(Long categoryId) {
+        return category.id.eq(categoryId);
     }
 
     private BooleanExpression itemIsNotDeleted() {
