@@ -2,7 +2,11 @@
 
 - 로컬에서 애플리케이션을 실행 후 http://localhost:8080/swagger-ui/index.html 로 접속하시면 API 문서를 확인하실 수 있습니다.
 
-![alt text](/assets/api-docs.png)
+![api-image](./assets/api-docs.png)
+
+### ERD
+
+![erd-image](./assets/assignment-erd.jpeg)
 
 ## 실행 방법
 
