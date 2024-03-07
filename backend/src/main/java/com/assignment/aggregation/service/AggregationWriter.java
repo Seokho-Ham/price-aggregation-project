@@ -124,7 +124,6 @@ public class AggregationWriter {
      * 1. 카테고리별로 각 브랜드가 가진 최고가 정보를 조회한다.
      * 2. 각 카테고리별로 최고가를 가진 브랜드를 필터링하여 집계 데이터로 변환 후 repository에 저장한다.
      *
-     * @return
      */
     @Transactional
     public List<CategoryHighestPriceBrand> aggregateCategoryHighestPriceBrandForAllCategories() {

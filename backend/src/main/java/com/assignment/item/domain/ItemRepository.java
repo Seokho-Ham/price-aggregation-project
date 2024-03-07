@@ -12,8 +12,4 @@ public interface ItemRepository extends JpaRepository<Item, Long> {
 
     Optional<Item> findByIdAndDeletedIsFalse(Long itemId);
 
-    Optional<Item> findTopByCategoryIdAndDeletedIsFalseOrderByPriceDesc(Long categoryId);
-
-    Optional<Item> findTopByCategoryIdAndDeletedIsFalseOrderByPriceAsc(Long categoryId);
-
 }

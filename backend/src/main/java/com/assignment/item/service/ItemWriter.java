@@ -44,7 +44,7 @@ public class ItemWriter {
 
     @Transactional
     public ItemDto delete(Long itemId) {
-        Item item = itemRepository.findByIdAndDeletedIsFalse(itemId)
+        Item item = itemRepository.findById(itemId)
             .orElseThrow(ItemNotFoundException::new);
         item.delete();
         return new ItemDto(item.getBrandId(), item.getCategoryId(), item.getPrice());

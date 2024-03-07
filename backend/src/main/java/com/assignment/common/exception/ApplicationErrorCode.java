@@ -11,6 +11,9 @@ public enum ApplicationErrorCode {
     INVALID_PARAM("COMMON-001", "올바르지 않은 값을 전달하였습니다."),
     OBJECT_PARSING_FAIL("COMMON-002", "데이터를 파싱하는데 실패하였습니다."),
 
+    //Server
+    SERVER_ERROR("SERVER-001", "서버 오류 입니다."),
+
     //Brand
     BRAND_NOT_FOUND("BRAND-001", "조건에 맞는 브랜드 정보를 찾지 못했습니다."),
     BRAND_DUPLICATE("BRAND-002", "동일한 이름의 브랜드가 존재합니다."),
