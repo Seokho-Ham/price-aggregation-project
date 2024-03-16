@@ -5,6 +5,9 @@ import lombok.RequiredArgsConstructor;
 
 @Getter
 @RequiredArgsConstructor
+// review: 별도 code 도 요즘 잘 안쓰는 추세임
+// 저게 나온 이유가 예전에 서블릿 시절에 FE 랑 Backend 같이 개발할때
+// http status 를 넘길수가 없어서 그런거라함
 public enum ApplicationErrorCode {
 
     //Common

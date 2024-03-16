@@ -16,6 +16,8 @@ public class BrandService {
     @Transactional
     public void create(BrandCreateDto requestDto) {
         Long brandId = brandWriter.create(requestDto);
+        // review: event 랑 도메인 행위랑 1대1로 잘 안함 produceBrandChangeEvent
+        // ProduceBrandChangeEvent( type: CREATE / UPDATE / DELETE )
         eventProducer.produceBrandCreateEvent(brandId);
     }
 
