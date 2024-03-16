@@ -54,10 +54,12 @@ public class AggregationWriter {
      * 1. 브랜드의 카테고리별 최저가 정보를 집계 후 repository에 저장한다.
      * 2. 해당 브랜드의 총액 정보를 repository에 저장한다.
      */
+    // 결국 특정
     @Transactional
     public List<BrandLowestPriceInfo> aggregateBrandLowestPriceInfoForOneBrandAndAllCategories(Long brandId) {
         List<BrandCategoryDto> dtos = aggregationQueryRepository.findBrandLowestPriceByBrandId(brandId);
 
+        // review: 이런거 많던대 log 찍고 throw 던지는게 나을듯
         if (dtos.isEmpty()) {
             log.error("[aggregate-fail]-lowest-total-price-brand: 브랜드에 관련된 상품 정보가 존재하지 않아 집계에 실패하였습니다.");
             return List.of();

@@ -20,6 +20,7 @@ public class BrandWriter {
 
     @Transactional
     public Long create(BrandCreateDto requestDto) {
+        // review: validate 는 service 에서 하고 writer 는 write 만
         validateBrandNameDuplicate(requestDto.getBrandName());
         Brand brand = brandRepository.save(new Brand(requestDto.getBrandName()));
         return brand.getId();
@@ -28,6 +29,9 @@ public class BrandWriter {
     @Transactional
     public Long update(BrandUpdateDto requestDto) {
         validateBrandNameDuplicate(requestDto.getBrandName());
+        // review: 나같으면 Brand 엔티티에 Where 어노테이션 걸던지 findById 만
+        // 인터페이스로 놓고 JPQL 로 delete where 걸듯
+        // writer 는 있는데 왜 reader 는 없음;
         Brand brand = brandRepository.findByIdAndDeletedIsFalse(requestDto.getBrandId())
             .orElseThrow(BrandNotFoundException::new);
         brand.updateName(requestDto.getBrandName());

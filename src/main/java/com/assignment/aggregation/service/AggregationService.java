@@ -127,6 +127,10 @@ public class AggregationService {
      * 2. 카테고리별 최저가, 최고가 데이터를 재집계한다.
      *
      */
+    // review: 근대 브랜드 정보가 바뀌는거랑 재집계랑 어떤 관련이 있는지 모르겠음..
+    // 결국 바뀌는건 특정 상품의 브랜드가 바뀌는거일거 같은데
+    // 특정 상품 브랜드 변경 -> 상품 업데이트 -> 브랜드 변경 체크 -> 해당 브랜드의 aggregation
+    // 이런 구조로 가야될거 같음
     @Transactional(propagation = Propagation.REQUIRES_NEW)
     public void aggregateOnBrandUpdate(Long brandId) {
         List<BrandLowestPriceInfo> originalData = brandLowestPriceInfoRepository.findAllByBrandIdOrderById(brandId);
@@ -153,6 +157,10 @@ public class AggregationService {
      * 2. 카테고리별 최저가, 최고가 데이터를 재집계한다.
      *
      */
+    // review: aggregation 은 굉장히 비싼 작업인데
+    // 브랜드 추가 업데이트마다 전체 aggregation 돌리지 말고
+    // 해당 브랜드가 카테고리 기준으로 최저, 최고 값에 존재하는지 체크해서
+    // 존재하면 해당 카테고리만 aggregation 다시하는 방향이 좋을거 같음
     @Transactional(propagation = Propagation.REQUIRES_NEW)
     public void aggregateOnBrandDelete(Long brandId) {
         aggregationWriter.deleteBrandTotalPriceByBrandId(brandId);
@@ -230,6 +238,7 @@ public class AggregationService {
      * 1. 상품이 속한 브랜드의 카테고리의 최저가 정보를 재집계한다.
      * 2. 상품이 속한 브랜드의 해당 카테고리의 기존 최저가 정보를 삭제한다.
      */
+    // review: 여기도 이미 최저가는 알고있을텐데 상품 추가마다 aggregation 할 필요가 없음
     @Transactional(propagation = Propagation.REQUIRES_NEW)
     public void aggregateOnItemUpdate(ItemDto itemDto) {
 

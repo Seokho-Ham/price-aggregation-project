@@ -12,12 +12,14 @@ import java.time.LocalDateTime;
 
 @Getter
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
+// review: id 만 거는것도 아니고, 전체 체크하는것도 아니고 왜 id, name 으로 체크하는지 모르겠음
 @EqualsAndHashCode(of = {"id", "name"}, callSuper = false)
 @Entity
 public class Brand extends BaseTimeEntity {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
+    // review: 보통 column 명 앞에 prefix 안붙임
     @Column(name = "brand_id")
     private Long id;
 
